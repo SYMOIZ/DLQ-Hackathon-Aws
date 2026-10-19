@@ -1,0 +1,25 @@
+DLQ Judge — how to push (Git Bash only)
+
+1) Open Git Bash:
+   "C:\Program Files\Git\git-bash.exe"
+
+2) Go to this folder:
+   cd ~/Desktop/dlq-judge
+
+3) Create public repo + push (needs gh logged in once):
+   gh auth login
+   gh repo create dlq-judge --public --source=. --remote=origin --push \
+     --description "Triage SQS dead-letter queues with Strands Decider 2B + Amazon Bedrock"
+
+   OR without gh (create empty repo on github.com/new named dlq-judge, then):
+   git remote add origin https://github.com/SYMOIZ/dlq-judge.git
+   git push -u origin main
+
+4) Topics (optional):
+   gh repo edit SYMOIZ/dlq-judge --add-topic strands-decider-2b --add-topic aws \
+     --add-topic amazon-bedrock --add-topic sqs --add-topic dead-letter-queue --add-topic ai-agent
+
+Repo URL after push:
+  https://github.com/SYMOIZ/dlq-judge
+Pattern folder:
+  https://github.com/SYMOIZ/dlq-judge/tree/main/patterns/confidence-gated-action
