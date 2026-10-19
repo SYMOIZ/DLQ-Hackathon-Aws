@@ -1,0 +1,11 @@
+{
+  "choice": "redrive_later",
+  "confidence": 0.4837,
+  "probabilities": {
+    "redrive_now": 0.2943,
+    "redrive_later": 0.5869,
+    "quarantine_poison": 0.0543,
+    "discard_duplicate": 0.0419,
+    "escalate_human": 0.0226
+  }
+}

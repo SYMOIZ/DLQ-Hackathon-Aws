@@ -1,0 +1,17 @@
+{
+  "state": "error_type=TimeoutError\nerror_text=upstream timeout\nreceive_count=2\nage_minutes=5\nsource_queue=dlqj-orders\nhas_idempotency_key=false\nbody={}",
+  "model": "strands-decider-latest",
+  "questions": {
+    "action": {
+      "type": "choice",
+      "instructions": "What is the safest next action for this failed message?",
+      "criteria": {
+        "redrive_now": "Transient failure; safe to retry immediately to the source queue.",
+        "redrive_later": "Backoff / throttle; retry to the source queue after a delay.",
+        "quarantine_poison": "Poison or schema bug; move aside for engineering fix.",
+        "discard_duplicate": "Confirmed duplicate with an idempotency key; safe to drop.",
+        "escalate_human": "Ambiguous or high-risk; leave for a human."
+      }
+    }
+  }
+}

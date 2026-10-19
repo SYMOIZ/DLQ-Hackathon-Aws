@@ -1,0 +1,61 @@
+# Secrets / local env
+.env
+.env.*
+!.env.example
+.aws/
+*_creds.txt
+credentials*
+secrets*
+*.pem
+*.key
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+node_modules/
+
+# Run / deploy / QA scratch (do not publish)
+runs/
+_jobs/
+outputs.env
+outputs.json
+*.tgz
+*.log
+ssm-*.json
+ssm-*.txt
+dec.txt
+diag.txt
+diag2.txt
+jobout.txt
+*_out.txt
+gh-auth-*.txt
+_gitbash_out.txt
+cdk.out/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Design binaries
+design/mockup/*.psd
+
+# Spike scratch
+scripts/_scratch_*
+scripts/_commit_and_push.sh
+scripts/_scrub_secrets.sh
+scripts/_scrub_live_ids.py
+scripts/_hackathon_prep.sh
+scripts/_run_prep_tests.sh

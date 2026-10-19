@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DLQ Judge</title>
+  <link rel="stylesheet" href="/app.css" />
+</head>
+<body class="dj login-only" data-theme="light" data-token="{{DLQJ_TOKEN}}" data-run="{{DLQJ_RUN_ID}}" data-client="{{DLQJ_COGNITO_CLIENT_ID}}">
+
+  <div id="site-landing" class="site-landing dj" data-theme="light">
+    <nav class="site-nav">
+      <button type="button" class="site-logo" id="site-logo" aria-label="DLQ Judge home">
+        <span class="mark" aria-hidden="true"><i></i></span>
+        <span>DLQ Judge</span>
+      </button>
+      <div class="site-nav-links">
+        <button type="button" data-jump="how">How it works</button>
+        <button type="button" data-jump="actions">Actions</button>
+        <button type="button" data-jump="safety">Safety</button>
+        <button type="button" data-jump="bench">Benchmark</button>
+        <button type="button" data-jump="setup">Setup</button>
+      </div>
+      <div class="site-nav-actions">
+        <button type="button" id="site-theme-toggle" class="site-btn ghost">Dark</button>
+        <button type="button" id="site-login" class="site-btn text">Log in</button>
+        <button type="button" id="site-signup" class="site-btn primary">Sign up</button>
+      </div>
+    </nav>
+
+    <section class="site-hero">
+      <div class="site-hero-copy">
+        <span class="site-pill">#strands-decider-2b · #policy</span>
+        <h1>Empty your dead-letter queue safely, and see what is actually broken.</h1>
+        <p>DLQ Judge decides what to do with every failed Amazon SQS message. A fast local model sorts hundreds of messages in seconds; Amazon Bedrock is called only for the hard cases and to explain failure clusters.</p>
+        <div class="site-cta-row">
+          <button type="button" id="hero-signup" class="site-btn primary lg">Connect your AWS account</button>
+          <button type="button" id="hero-login" class="site-btn ghost lg">View last run</button>
+        </div>
+        <p class="site-cta-sub">Sign up to use the shared deploy account</p>
+        <div class="site-cli"><span class="faint">$</span> <span>dlq-judge triage --queue dlqj-payments-dlq</span><span class="faint">  # dry run by default</span></div>
+      </div>
+      <div class="site-hero-card" id="hero-preview">
+        <div class="site-hero-card-head">
+          <span class="mono" id="hero-queue">dlqj-payments-dlq</span>
+          <span class="site-badge" id="hero-badge">Last run · dlqj-payments-dlq</span>
+        </div>
+        <div class="site-hero-cards" id="hero-action-cards"></div>
+        <div class="site-hero-bars-wrap">
+          <div class="site-hero-bars" id="hero-bars" aria-hidden="true"></div>
+          <div class="site-hero-bands">
+            <span class="esc">&lt; 0.60 escalate</span>
+            <span class="br">0.60–0.85 Bedrock</span>
+            <span class="ok">≥ 0.85 auto</span>
+          </div>
+        </div>
+        <div class="site-hero-foot">
+          <div><div class="lab">Messages</div><b id="hero-msgs">0</b></div>
+          <div><div class="lab">Median latency</div><b id="hero-lat">—</b></div>
+          <div><div class="lab">Bedrock calls</div><b id="hero-bedrock">0</b></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="site-band">
+      <div class="site-band-inner site-problem">
+        <div>
+          <h2>The problem</h2>
+          <p class="muted">DLQs fill up silently. Clearing them is manual, repetitive and risky: redriving a bad message fails again, and deleting a good one loses data.</p>
+        </div>
+        <div class="site-problem-grid">
+          <div class="site-card">
+            <b>Backend / platform engineer</b>
+            <div><div class="tiny">Pain today</div><div class="muted">Reads messages one by one to decide redrive or delete.</div></div>
+            <div><div class="tiny">What DLQ Judge does</div><div>Sorts the whole DLQ and acts on the safe cases.</div></div>
+          </div>
+          <div class="site-card">
+            <b>On-call engineer</b>
+            <div><div class="tiny">Pain today</div><div class="muted">Bulk redrive replays poison messages and re-floods the DLQ.</div></div>
+            <div><div class="tiny">What DLQ Judge does</div><div>Holds back poison messages and redrives only transient failures.</div></div>
+          </div>
+          <div class="site-card">
+            <b>Team lead</b>
+            <div><div class="tiny">Pain today</div><div class="muted">No record of why messages were dropped.</div></div>
+            <div><div class="tiny">What DLQ Judge does</div><div>Gives an audit log of every action with its confidence.</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="how" class="site-section">
+      <div>
+        <h2>One decision per message, three confidence bands</h2>
+        <p class="muted">Run one command and get every message sorted, safe actions applied, and a report in under a minute for a few hundred messages.</p>
+      </div>
+      <div class="site-flow">
+        <div class="site-card"><span class="mono ink-now">01</span><b>Read the DLQ</b><span class="muted">Builds a compact, PII-masked state per message: error type, error text, receive count, age, idempotency key.</span></div>
+        <div class="site-card"><span class="mono ink-now">02</span><b>Decider scores all five options</b><span class="muted">Strands Decider 2B runs locally and returns a probability for each action.</span></div>
+        <div class="site-card"><span class="mono ink-br">03</span><b>Bedrock only when unsure</b><span class="muted">Uncertain messages get a second opinion. Quarantined messages are grouped so one call explains a whole cluster.</span></div>
+        <div class="site-card"><span class="mono ink-ok">04</span><b>Act, log, report</b><span class="muted">Safe actions are applied (after dry run). Every decision is logged with its probabilities in a report.</span></div>
+      </div>
+      <div class="site-bands">
+        <div class="site-band-card" style="border-top-color:var(--fg)"><span class="mono">≥ 0.85</span><span>Act automatically</span><span class="muted">Decider acts alone.</span></div>
+        <div class="site-band-card" style="border-top-color:var(--br)"><span class="mono">0.60–0.85</span><span>Bedrock second opinion</span><span class="muted">Act only if both agree.</span></div>
+        <div class="site-band-card" style="border-top-color:var(--a-esc)"><span class="mono">&lt; 0.60</span><span>Escalate to human</span><span class="muted">Missing error attributes also escalate; Decider is not called.</span></div>
+      </div>
+    </section>
+
+    <section id="actions" class="site-band">
+      <div class="site-band-inner site-stack">
+        <div>
+          <h2>Five actions</h2>
+          <p class="muted">The question for every message: "What is the safest next action for this failed message?"</p>
+        </div>
+        <div class="site-actions-table">
+          <div class="site-action-row"><span class="act now">Redrive now</span><code>redrive_now</code><span>Transient failure that is already over</span><span class="muted">Send back to the source queue</span></div>
+          <div class="site-action-row"><span class="act later">Redrive later</span><code>redrive_later</code><span>Throttling or downstream outage</span><span class="muted">Send back with a delay</span></div>
+          <div class="site-action-row"><span class="act quar">Quarantine</span><code>quarantine_poison</code><span>Bad payload or schema; will always fail</span><span class="muted">Move to S3 quarantine</span></div>
+          <div class="site-action-row"><span class="act disc">Discard duplicate</span><code>discard_duplicate</code><span>Already processed</span><span class="muted">Delete from the DLQ</span></div>
+          <div class="site-action-row"><span class="act esc">Escalate to human</span><code>escalate_human</code><span>Unclear or high-risk</span><span class="muted">Leave in the DLQ and flag in the report</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="safety" class="site-section site-safety">
+      <div class="site-stack">
+        <h2>Safety rules, always on</h2>
+        <div class="site-check"><span>✓</span><div><b>Dry run by default</b><div class="muted">Actions need an explicit apply step or the --apply flag.</div></div></div>
+        <div class="site-check"><span>✓</span><div><b>Discard needs ≥ 0.90 confidence and an idempotency key</b><div class="muted">Any discard below 0.90 is flagged and held in the DLQ.</div></div></div>
+        <div class="site-check"><span>✓</span><div><b>Every decision is logged</b><div class="muted">Each action is stored with its option probabilities for audit.</div></div></div>
+        <div class="site-check"><span>✓</span><div><b>No secrets sent to the model</b><div class="muted">Message bodies are truncated and PII-masked before scoring.</div></div></div>
+        <div class="site-check"><span>✓</span><div><b>Bedrock calls are capped per run</b><div class="muted">Every call is logged; Bedrock can confirm or block, never act alone.</div></div></div>
+      </div>
+      <div class="site-stack">
+        <h2>Where Bedrock is used</h2>
+        <div class="site-card"><b class="ink-br">Second opinion</b><div class="muted">For messages at 0.60–0.85, Bedrock picks one of the same five options with a one-line reason.</div></div>
+        <div class="site-card"><b class="ink-br">Cluster diagnosis</b><div class="muted">Quarantined messages are grouped by error type; Bedrock returns a likely root cause and a suggested fix.</div></div>
+        <div class="site-card"><b class="ink-br">Run report</b><div class="muted">A short team summary of what was redriven, quarantined, discarded and escalated, and why.</div></div>
+        <div class="site-note">Every explanation cites message IDs and error fields. Claims without evidence are labelled <b class="ink-quar">unverified</b>. Bedrock never triggers an action alone.</div>
+      </div>
+    </section>
+
+    <section id="bench" class="site-band">
+      <div class="site-band-inner site-stack">
+        <div class="site-bench-head">
+          <div>
+            <h2>Benchmarked against two baselines</h2>
+            <p class="muted">Same labelled messages for all approaches. Results shown only when measured on this deploy — no placeholder numbers.</p>
+          </div>
+        </div>
+        <p class="muted" id="site-bench-note">Sign in to open the full benchmark view from measured results on disk.</p>
+      </div>
+    </section>
+
+    <section id="setup" class="site-section site-setup">
+      <div class="site-stack">
+        <h2>Shared hackathon deploy</h2>
+        <p class="muted">You sign in with Cognito email only. The app uses the EC2 instance role <code class="mono">dlqj-ec2</code> in account <code class="mono"><AWS_ACCOUNT_ID></code> · <code class="mono">us-east-1</code>. You do not paste AWS keys. Queues must be <code class="mono">dlqj-*</code>.</p>
+        <div class="site-deps">
+          <div><span class="mono">strands-agents</span><span class="muted">Agent loop and hook</span><span>Required</span></div>
+          <div><span class="mono">strands-decider</span><span class="muted">Serves Decider 2B locally</span><span>Required</span></div>
+          <div><span class="mono">boto3</span><span class="muted">SQS, S3, Bedrock calls</span><span>Required</span></div>
+          <div><span class="mono">Amazon SQS</span><span class="muted">Source queue and its DLQ</span><span>Required</span></div>
+          <div><span class="mono">Amazon Bedrock</span><span class="muted">Second opinions, explanations</span><span>Required</span></div>
+          <div><span class="mono">Amazon S3</span><span class="muted">Quarantine store</span><span class="muted">Optional</span></div>
+        </div>
+      </div>
+      <div class="site-stack">
+        <h2>Reusable pattern</h2>
+        <p class="muted">"Failed-Message Recovery": one question, five options, a three-band confidence policy and a hook that runs before any destructive queue action.</p>
+        <pre class="site-pre">patterns/failed_message_recovery/
+├─ question.py   <span class="faint"># typed question + 5 options</span>
+├─ state.py      <span class="faint"># SQS, EventBridge, Kinesis, Step Functions</span>
+├─ policy.py     <span class="faint"># thresholds + safety rules</span>
+├─ hook.py       <span class="faint"># runs before redrive / delete</span>
+└─ README.md</pre>
+      </div>
+    </section>
+
+    <section class="site-footer-cta-wrap">
+      <div class="site-footer-cta">
+        <div>
+          <h2>Start with a dry run.</h2>
+          <p>Nothing is changed until you apply actions.</p>
+        </div>
+        <button type="button" id="footer-signup" class="site-btn invert lg">Sign up to use the shared deploy</button>
+      </div>
+    </section>
+    <footer class="site-footer">
+      <span>DLQ Judge · shared deploy account <AWS_ACCOUNT_ID></span>
+      <span class="mono">Amazon SQS · S3 · Bedrock</span>
+    </footer>
+  </div>
+
+  <div id="auth-gate" class="auth-gate dj hidden" data-theme="light">
+    <div class="auth-card">
+      <button type="button" id="auth-back-home" class="auth-back">← Back to home</button>
+      <div class="auth-brand">
+        <div class="mark mark-lg" aria-hidden="true"><i></i></div>
+        <div>
+          <h1 id="auth-title">Log in to DLQ Judge</h1>
+        </div>
+      </div>
+      <p class="auth-sub" id="auth-sub">View runs, reports and audit logs on the shared deploy.</p>
+      <div class="auth-tabs">
+        <button type="button" id="tab-login" class="active">Log in</button>
+        <button type="button" id="tab-signup">Sign up</button>
+        <button type="button" id="tab-verify">Verify</button>
+      </div>
+      <form id="form-login" class="auth-form">
+        <label>Work email <input type="email" name="email" required autocomplete="username" /></label>
+        <label>Password <input type="password" name="password" required autocomplete="current-password" /></label>
+        <button type="submit">Log in</button>
+      </form>
+      <form id="form-signup" class="auth-form hidden">
+        <label>Work email <input type="email" name="email" required /></label>
+        <label>Password <input type="password" name="password" required minlength="8" /></label>
+        <button type="submit">Create account</button>
+      </form>
+      <form id="form-verify" class="auth-form hidden">
+        <label>Work email <input type="email" name="email" required /></label>
+        <label>Verification code <input type="text" name="code" required autocomplete="one-time-code" /></label>
+        <button type="submit">Verify email</button>
+        <button type="button" id="btn-resend" class="auth-resend">Resend confirmation code</button>
+      </form>
+      <p id="auth-msg" class="auth-msg" hidden></p>
+      <p class="auth-switch muted" id="auth-switch"></p>
+    </div>
+  </div>
+
+  <div id="app" class="app dj hidden" data-theme="light">
+    <aside class="sidebar">
+      <div class="brand-row">
+        <div class="mark" aria-hidden="true"><i></i></div>
+        <div>
+          <strong>DLQ Judge</strong>
+          <span class="sub">v0.3 · local CLI report</span>
+        </div>
+      </div>
+
+      <div class="acct-chip" title="Shared deploy uses the EC2 instance role">
+        <span class="dot"></span>
+        <span style="flex:1;min-width:0;display:flex;flex-direction:column">
+          <span class="name" id="acct-name"><AWS_ACCOUNT_ID></span>
+          <span class="sub" id="acct-sub">us-east-1 · instance role</span>
+        </span>
+      </div>
+
+      <div class="nav-section">Workspace</div>
+      <nav>
+        <button type="button" data-view="summary" class="nav active">
+          <span>Run summary</span><span class="count"></span>
+        </button>
+        <button type="button" data-view="messages" class="nav">
+          <span>Messages</span><span class="count" id="nav-msg-count"></span>
+        </button>
+        <button type="button" data-view="clusters" class="nav">
+          <span>Failure clusters</span><span class="count" id="nav-cluster-count"></span>
+        </button>
+        <button type="button" data-view="benchmark" class="nav">
+          <span>Benchmark</span><span class="count"></span>
+        </button>
+        <button type="button" data-view="settings" class="nav" id="nav-settings">
+          <span>Settings</span><span class="count"></span>
+        </button>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="status-card" id="sidebar-meta">
+          <div class="row"><span>Decider</span><span>—</span></div>
+          <div class="row"><span>Bedrock</span><span>—</span></div>
+          <div class="row"><span>Call cap</span><span>—</span></div>
+          <div class="row"><span>Discard min</span><span>—</span></div>
+        </div>
+
+        <div class="theme-toggle" role="group" aria-label="Theme">
+          <button type="button" id="btn-theme-light" class="active">Light</button>
+          <button type="button" id="btn-theme-dark">Dark</button>
+        </div>
+
+        <div class="profile-foot">
+          <div class="profile-menu-wrap">
+            <div id="profile-menu" class="profile-menu hidden" role="menu">
+              <div class="profile-menu-head">
+                <div class="pname" id="menu-profile-name">—</div>
+                <div class="pemail" id="menu-profile-email">—</div>
+                <div class="muted" style="font-size:11px;margin-top:2px">Platform · Admin</div>
+              </div>
+              <button type="button" id="btn-go-profile" role="menuitem">Profile</button>
+              <button type="button" id="btn-go-settings" role="menuitem">Settings</button>
+              <button type="button" id="btn-logout" class="menu-logout" role="menuitem">Log out</button>
+            </div>
+            <button type="button" class="profile-btn" id="profile-display" aria-haspopup="true" aria-expanded="false">
+              <span class="avatar" id="profile-avatar">—</span>
+              <span style="flex:1;min-width:0;text-align:left">
+                <span class="pname" id="profile-name">Signed in</span>
+                <span class="pemail" id="profile-email">—</span>
+              </span>
+              <span class="muted" style="font-size:10px">⋯</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="top-header">
+        <div class="breadcrumb">
+          <span>Runs</span>
+          <span class="sep">/</span>
+          <span class="run-id" id="run-id">—</span>
+        </div>
+        <div class="header-row">
+          <div class="header-left">
+            <h1 id="queue-name">—</h1>
+            <span id="mode-pill" class="pill pill-dry"><span class="dot"></span><span class="label">Dry run</span></span>
+          </div>
+          <div class="header-right">
+            <button type="button" id="btn-export" class="btn">Export report</button>
+            <button type="button" id="btn-apply" class="btn btn-primary" disabled>Apply actions</button>
+          </div>
+        </div>
+        <div class="ops-row">
+          <button type="button" id="btn-triage" class="btn">Triage</button>
+          <input id="queue-arn" type="text" placeholder="DLQ ARN (arn:aws:sqs:region:acct:dlqj-…)" />
+          <button type="button" id="btn-set-queue" class="btn">Set queue</button>
+          <span id="job-status"></span>
+        </div>
+        <div class="meta-row" id="meta-row"></div>
+      </header>
+
+      <div class="content">
+        <p id="page-error" class="page-error" hidden></p>
+
+        <section id="view-summary" class="view">
+          <div class="section-head">
+            <h2>Actions</h2>
+            <span class="muted" id="summary-sub">—</span>
+          </div>
+          <div id="summary-cards" class="action-cards"></div>
+          <div id="summary-stats" class="stat-strip"></div>
+          <div id="summary-hist" class="hist-panel"></div>
+        </section>
+
+        <section id="view-messages" class="view hidden">
+          <div class="msg-panel">
+            <div class="msg-toolbar">
+              <div class="search-wrap">
+                <span class="icon" aria-hidden="true"></span>
+                <input id="msg-search" type="search" placeholder="Search message ID or error text" />
+              </div>
+              <div class="filter-chips" id="action-filters"></div>
+              <select id="filter-band">
+                <option value="">All confidence bands</option>
+                <option value="auto">≥ 0.85 · auto-act</option>
+                <option value="check">0.60–0.85 · Bedrock check</option>
+                <option value="low">&lt; 0.60 · escalate</option>
+                <option value="none">Not scored (rule)</option>
+              </select>
+              <select id="filter-status">
+                <option value="">All statuses</option>
+              </select>
+              <button type="button" id="btn-clear-filters" class="btn-ghost hidden">Clear</button>
+              <span class="msg-showing" id="msg-showing"></span>
+            </div>
+            <div class="msg-head">
+              <span>Message ID</span><span>Error type</span><span style="text-align:right;padding-right:16px">Recv</span>
+              <span>Action</span><span>Confidence</span><span>Decided by</span><span>Status</span>
+            </div>
+            <div id="msg-rows"></div>
+            <div class="msg-foot">
+              <span>Click a row to inspect the decision · Esc closes</span>
+              <div class="pager">
+                <button type="button" id="btn-prev-page">Previous</button>
+                <span id="page-label">Page 1 of 1</span>
+                <button type="button" id="btn-next-page">Next</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="view-clusters" class="view hidden">
+          <div class="section-head">
+            <div>
+              <h2>Failure clusters</h2>
+              <div class="muted" style="margin-top:4px">Quarantined messages grouped by error type. One Bedrock call per cluster.</div>
+            </div>
+            <span class="muted" id="cluster-sub"></span>
+          </div>
+          <div id="cluster-list" style="display:flex;flex-direction:column;gap:16px"></div>
+        </section>
+
+        <section id="view-benchmark" class="view hidden">
+          <div id="bench-root"></div>
+        </section>
+
+        <section id="view-settings" class="view hidden">
+          <div class="settings-tabs" role="tablist">
+            <button type="button" class="set-tab active" data-stab="profile">Profile</button>
+            <button type="button" class="set-tab" data-stab="prefs">Settings</button>
+            <button type="button" class="set-tab" data-stab="accounts">AWS accounts</button>
+          </div>
+
+          <div id="stab-profile" class="stab-panel">
+            <div class="settings-grid">
+              <div class="settings-col">
+                <section class="panel-card">
+                  <div class="profile-edit-head">
+                    <span class="avatar lg" id="pf-avatar">—</span>
+                    <div>
+                      <h3>Profile</h3>
+                      <span class="muted">Used in the audit log when you override or apply actions</span>
+                    </div>
+                  </div>
+                  <div class="form-grid-2">
+                    <label>Full name <input id="pf-name" type="text" /></label>
+                    <label>Team <input id="pf-team" type="text" /></label>
+                    <label>Work email <input id="pf-email" type="email" readonly /></label>
+                    <label>Role <input id="pf-role" type="text" value="Admin" readonly /></label>
+                  </div>
+                  <div class="btn-row">
+                    <button type="button" id="btn-pf-save" class="btn btn-primary">Save changes</button>
+                    <button type="button" id="btn-pf-password" class="btn">Change password</button>
+                  </div>
+                  <p id="pf-msg" class="auth-msg" hidden></p>
+                </section>
+                <section class="panel-card danger-card">
+                  <div>
+                    <h3>Delete profile</h3>
+                    <span class="muted">Removes your profile, sessions and personal settings. Past audit-log entries keep your name. The shared deploy account is unchanged. This cannot be undone.</span>
+                  </div>
+                  <button type="button" id="btn-pf-delete" class="btn btn-danger">Delete profile</button>
+                </section>
+              </div>
+              <div class="settings-col">
+                <section class="panel-card">
+                  <div class="panel-card-head"><h3>Security</h3></div>
+                  <div class="toggle-row">
+                    <div><span class="t-label">Two-factor authentication</span><span class="muted">Authenticator app (coming soon)</span></div>
+                    <button type="button" id="btn-tfa" class="toggle" data-on="0" aria-pressed="false"><span></span></button>
+                  </div>
+                  <div class="sessions-block">
+                    <span class="muted">Active sessions</span>
+                    <div class="session-row"><span>This browser · current</span><span class="ok-ink">Active</span></div>
+                  </div>
+                </section>
+              </div>
+            </div>
+          </div>
+
+          <div id="stab-prefs" class="stab-panel hidden">
+            <div class="settings-grid">
+              <div class="settings-col">
+                <section class="panel-card">
+                  <div><h3>Display</h3><span class="muted">Stored per user in this browser</span></div>
+                  <div class="pref-row">
+                    <span>Theme</span>
+                    <div class="theme-toggle sm" role="group">
+                      <button type="button" id="pref-theme-light" class="active">Light</button>
+                      <button type="button" id="pref-theme-dark">Dark</button>
+                    </div>
+                  </div>
+                  <div class="pref-row">
+                    <span>Time zone</span>
+                    <select id="pref-tz"><option>UTC</option><option>Europe/Dublin</option><option>America/New_York</option></select>
+                  </div>
+                  <div class="pref-row">
+                    <span>Start page</span>
+                    <select id="pref-start">
+                      <option value="summary">Run summary</option>
+                      <option value="messages">Messages</option>
+                      <option value="clusters">Failure clusters</option>
+                    </select>
+                  </div>
+                  <div class="pref-row">
+                    <span>Table density</span>
+                    <select id="pref-density"><option>Comfortable</option><option>Compact</option></select>
+                  </div>
+                </section>
+                <section class="panel-card">
+                  <div class="panel-card-head"><h3>Notifications</h3><span class="muted" id="pref-notify-email"></span></div>
+                  <div class="toggle-row" data-pref="digest"><div><span class="t-label">Run summary email</span><span class="muted">Send the run report after each triage</span></div><button type="button" class="toggle pref-toggle" data-on="0"><span></span></button></div>
+                  <div class="toggle-row" data-pref="fail"><div><span class="t-label">Connector failure alerts</span><span class="muted">Email when an AWS account fails</span></div><button type="button" class="toggle pref-toggle" data-on="0"><span></span></button></div>
+                  <div class="toggle-row" data-pref="apply"><div><span class="t-label">Notify on every applied action</span><span class="muted">One email each time actions are applied</span></div><button type="button" class="toggle pref-toggle" data-on="0"><span></span></button></div>
+                  <div class="toggle-row" data-pref="bedrock"><div><span class="t-label">Bedrock cap warnings</span><span class="muted">Warn at 80% of the per-run call cap</span></div><button type="button" class="toggle pref-toggle" data-on="1"><span></span></button></div>
+                </section>
+              </div>
+              <div class="settings-col">
+                <section class="panel-card">
+                  <div class="panel-card-head">
+                    <div><h3>CLI tokens</h3><span class="muted">Used by dlq-judge login</span></div>
+                    <button type="button" class="btn" id="btn-new-token" disabled title="CLI tokens not wired in v1">New token</button>
+                  </div>
+                  <div class="token-row muted">No CLI tokens yet — use Cognito email login in the UI.</div>
+                </section>
+              </div>
+            </div>
+          </div>
+
+          <div id="stab-accounts" class="stab-panel hidden">
+            <div class="acct-toolbar">
+              <div>
+                <h2 class="acct-title">AWS accounts</h2>
+                <p class="muted" style="margin:4px 0 0;font-size:12.5px">Connectors the app can use for SQS / S3 / Bedrock. No long-lived access keys are stored.</p>
+              </div>
+              <button type="button" id="btn-add-aws" class="btn btn-primary">+ Add AWS account</button>
+            </div>
+
+            <div class="acct-stats" id="acct-stats">
+              <div class="acct-stat"><span class="dot ok"></span><span class="lab">Connected</span><b id="stat-connected">0</b></div>
+              <div class="acct-stat"><span class="dot warn"></span><span class="lab">Degraded</span><b id="stat-degraded">0</b></div>
+              <div class="acct-stat"><span class="dot mute"></span><span class="lab">Disconnected</span><b id="stat-disc">0</b></div>
+              <div class="acct-stat"><span class="dot"></span><span class="lab">Total</span><b id="stat-total">0</b></div>
+            </div>
+
+            <div id="acct-cards" class="acct-cards"></div>
+
+            <section id="aws-connect-panel" class="panel-card aws-connect hidden">
+              <div class="panel-card-head">
+                <div>
+                  <h3>Connect your AWS account</h3>
+                  <span class="muted">Paste an IAM role ARN the app can use. Prefer the CloudFormation / instance role for this deploy.</span>
+                </div>
+                <button type="button" id="btn-connect-cancel" class="btn">Cancel</button>
+              </div>
+              <div class="connect-methods" role="tablist">
+                <button type="button" class="conn-method active" data-method="cfn">CloudFormation</button>
+                <button type="button" class="conn-method" data-method="cli">CLI</button>
+                <button type="button" class="conn-method" data-method="sso">IAM Identity Center</button>
+              </div>
+              <div id="conn-cfn" class="conn-body">
+                <ol class="conn-steps">
+                  <li><b>Use this deploy’s role</b> — the EC2 instance already has <code>dlqj-ec2</code>. Leave ARN blank to keep it, or paste the role ARN from CloudFormation outputs.</li>
+                  <li><b>Paste role ARN</b> (optional for same-account)</li>
+                </ol>
+              </div>
+              <div id="conn-cli" class="conn-body hidden">
+                <pre class="conn-pre">$ aws sts get-caller-identity
+$ # Role must allow SQS dlqj-*, S3 quarantine, Bedrock Nova Micro</pre>
+              </div>
+              <div id="conn-sso" class="conn-body hidden">
+                <p class="muted">SSO profiles are for local CLI. This hosted UI uses the instance role or an AssumeRole ARN.</p>
+              </div>
+              <div class="form-grid-2">
+                <label>Role ARN
+                  <input id="conn-role-arn" type="text" class="mono" placeholder="arn:aws:iam::<AWS_ACCOUNT_ID>:role/dlqj-ec2" />
+                </label>
+                <label>Region
+                  <select id="conn-region">
+                    <option value="us-east-1">us-east-1 · N. Virginia</option>
+                    <option value="us-west-2">us-west-2 · Oregon</option>
+                    <option value="eu-west-1">eu-west-1 · Ireland</option>
+                  </select>
+                </label>
+              </div>
+              <label>Display name <input id="conn-name" type="text" placeholder="Hackathon deploy" /></label>
+              <div class="btn-row">
+                <button type="button" id="btn-test-conn" class="btn">Test connection</button>
+                <button type="button" id="btn-save-conn" class="btn btn-primary" disabled>Save connector</button>
+                <span id="conn-test-msg" class="muted"></span>
+              </div>
+            </section>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <div id="delete-modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-scrim" id="delete-modal-scrim"></div>
+    <div class="modal-card">
+      <h2>Delete profile?</h2>
+      <div class="modal-sub">Type <b>DELETE</b> to confirm. This signs you out and removes your Cognito user.</div>
+      <label style="display:flex;flex-direction:column;gap:6px;font-size:12.5px;font-weight:500">Confirmation
+        <input id="delete-confirm-input" type="text" placeholder="DELETE" autocomplete="off" />
+      </label>
+      <div class="modal-actions">
+        <button type="button" id="delete-modal-cancel" class="btn">Cancel</button>
+        <button type="button" id="delete-modal-ok" class="btn btn-danger" disabled>Verify and delete profile</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="drawer-root" class="hidden" aria-hidden="true">
+    <div class="drawer-scrim" id="drawer-scrim"></div>
+    <aside class="drawer" id="drawer" role="dialog" aria-modal="true">
+      <div class="drawer-head">
+        <div class="drawer-head-top">
+          <span class="muted" style="font-size:12px">Message</span>
+          <button type="button" id="drawer-close" class="drawer-close" aria-label="Close">×</button>
+        </div>
+        <div class="drawer-id" id="drawer-id"></div>
+        <div id="drawer-chips" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"></div>
+      </div>
+      <div class="drawer-body" id="drawer-body"></div>
+      <div class="drawer-foot" id="drawer-foot"></div>
+    </aside>
+  </div>
+
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-scrim" id="modal-scrim"></div>
+    <div class="modal-card">
+      <h2 id="modal-title">Apply?</h2>
+      <div class="modal-sub" id="modal-sub"></div>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-actions">
+        <button type="button" id="modal-cancel" class="btn">Cancel</button>
+        <button type="button" id="modal-ok" class="btn btn-primary">Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

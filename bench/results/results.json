@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "sample_data": false,
+  "n_messages": 300,
+  "approaches": [
+    {
+      "name": "Rules",
+      "id": "A",
+      "accuracy": 1.0,
+      "unsafe_action_rate": 0.0,
+      "median_latency_ms": 0,
+      "p95_latency_ms": 0,
+      "bedrock_calls_per_1000": 0.0
+    },
+    {
+      "name": "Bedrock only",
+      "id": "B",
+      "accuracy": 0.0667,
+      "unsafe_action_rate": 0.0,
+      "median_latency_ms": 1136,
+      "p95_latency_ms": 1695,
+      "bedrock_calls_per_1000": 1000.0,
+      "note": "evaluated on first 30 messages for cost"
+    },
+    {
+      "name": "DLQ Judge",
+      "id": "C",
+      "accuracy": 0.0667,
+      "unsafe_action_rate": 0.0,
+      "median_latency_ms": 3537,
+      "p95_latency_ms": 4103,
+      "bedrock_calls_per_1000": 0.0
+    }
+  ]
+}

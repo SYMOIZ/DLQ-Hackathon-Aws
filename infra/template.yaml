@@ -1,0 +1,397 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: DLQ Judge — SQS, S3, Cognito, EC2+SSM, CloudFront HTTPS.
+
+Parameters:
+  BedrockResourceArns:
+    Type: CommaDelimitedList
+  InstanceType:
+    Type: String
+    Default: t3.xlarge
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+  CloudFrontPrefixListId:
+    Type: String
+    Default: pl-3b927c52
+    Description: com.amazonaws.global.cloudfront.origin-facing in us-east-1
+
+Resources:
+  DeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: dlqj-orders-dlq
+      MessageRetentionPeriod: 1209600
+      SqsManagedSseEnabled: true
+      Tags: [{Key: project, Value: dlq-judge}]
+
+  SourceQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: dlqj-orders
+      VisibilityTimeout: 30
+      MessageRetentionPeriod: 345600
+      SqsManagedSseEnabled: true
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt DeadLetterQueue.Arn
+        maxReceiveCount: 3
+      Tags: [{Key: project, Value: dlq-judge}]
+
+  PaymentsDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: dlqj-payments-dlq
+      MessageRetentionPeriod: 1209600
+      SqsManagedSseEnabled: true
+      Tags: [{Key: project, Value: dlq-judge}]
+
+  PaymentsSource:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: dlqj-payments
+      VisibilityTimeout: 30
+      MessageRetentionPeriod: 345600
+      SqsManagedSseEnabled: true
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt PaymentsDLQ.Arn
+        maxReceiveCount: 3
+      Tags: [{Key: project, Value: dlq-judge}]
+
+  ShippingDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: dlqj-shipping-dlq
+      MessageRetentionPeriod: 1209600
+      SqsManagedSseEnabled: true
+      Tags: [{Key: project, Value: dlq-judge}]
+
+  ShippingSource:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: dlqj-shipping
+      VisibilityTimeout: 30
+      MessageRetentionPeriod: 345600
+      SqsManagedSseEnabled: true
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt ShippingDLQ.Arn
+        maxReceiveCount: 3
+      Tags: [{Key: project, Value: dlq-judge}]
+
+  QuarantineBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub dlqj-quarantine-${AWS::AccountId}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault: {SSEAlgorithm: AES256}
+      LifecycleConfiguration:
+        Rules:
+          - Id: expire-after-7-days
+            Status: Enabled
+            ExpirationInDays: 7
+      Tags: [{Key: project, Value: dlq-judge}]
+
+  QuarantineBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref QuarantineBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource: [!GetAtt QuarantineBucket.Arn, !Sub '${QuarantineBucket.Arn}/*']
+            Condition: {Bool: {aws:SecureTransport: 'false'}}
+
+  DeployBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub dlqj-deploy-${AWS::AccountId}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault: {SSEAlgorithm: AES256}
+      Tags: [{Key: project, Value: dlq-judge}]
+
+  # Email: COGNITO_DEFAULT (~50 msgs/day). No SES identities in this account yet.
+  # To deliver reliably at volume: verify an SES identity, then set
+  # EmailConfiguration.EmailSendingAccount=DEVELOPER + SourceArn to that identity.
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: dlqj-users
+      UsernameAttributes: [email]
+      AutoVerifiedAttributes: [email]
+      UsernameConfiguration: {CaseSensitive: false}
+      EmailConfiguration:
+        EmailSendingAccount: COGNITO_DEFAULT
+      VerificationMessageTemplate:
+        DefaultEmailOption: CONFIRM_WITH_CODE
+        EmailSubject: Your DLQ Judge verification code
+        EmailMessage: 'Your DLQ Judge verification code is {####}'
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+          RequireUppercase: true
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Required: true
+          Mutable: true
+      UserPoolTags: {project: dlq-judge}
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: dlqj-ui
+      UserPoolId: !Ref UserPool
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_SRP_AUTH
+      PreventUserExistenceErrors: ENABLED
+      SupportedIdentityProviders: [COGNITO]
+
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: dlqj-ec2
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: {Service: ec2.amazonaws.com}
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Tags: [{Key: project, Value: dlq-judge}]
+      Policies:
+        - PolicyName: dlqj-ec2-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: [sqs:ReceiveMessage, sqs:DeleteMessage, sqs:ChangeMessageVisibility, sqs:GetQueueAttributes, sqs:GetQueueUrl, sqs:SendMessage]
+                Resource:
+                  - !GetAtt DeadLetterQueue.Arn
+                  - !GetAtt SourceQueue.Arn
+                  - !GetAtt PaymentsDLQ.Arn
+                  - !GetAtt PaymentsSource.Arn
+                  - !GetAtt ShippingDLQ.Arn
+                  - !GetAtt ShippingSource.Arn
+              - Effect: Allow
+                Action: [s3:PutObject, s3:GetObject, s3:ListBucket, s3:GetBucketLocation]
+                Resource:
+                  - !GetAtt QuarantineBucket.Arn
+                  - !Sub '${QuarantineBucket.Arn}/*'
+                  - !GetAtt DeployBucket.Arn
+                  - !Sub '${DeployBucket.Arn}/*'
+              - Effect: Allow
+                Action: [bedrock:InvokeModel, bedrock:InvokeModelWithResponseStream]
+                Resource: !Ref BedrockResourceArns
+              - Effect: Allow
+                Action:
+                  - cognito-idp:InitiateAuth
+                  - cognito-idp:SignUp
+                  - cognito-idp:ConfirmSignUp
+                  - cognito-idp:GetUser
+                  - cognito-idp:ListUsers
+                  - cognito-idp:DescribeUserPool
+                  - cognito-idp:ResendConfirmationCode
+                  - cognito-idp:AdminConfirmSignUp
+                  - cognito-idp:AdminDeleteUser
+                  - cognito-idp:AdminGetUser
+                Resource: !GetAtt UserPool.Arn
+              - Effect: Allow
+                Action: cloudformation:DescribeStacks
+                Resource: !Sub arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${AWS::StackName}/*
+              - Effect: Allow
+                Action: sts:GetCallerIdentity
+                Resource: '*'
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles: [!Ref InstanceRole]
+
+  RunnerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: dlqj-runner
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
+            Action: sts:AssumeRole
+      Tags: [{Key: project, Value: dlq-judge}]
+      Policies:
+        - PolicyName: dlqj-runner-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: [sqs:ReceiveMessage, sqs:DeleteMessage, sqs:ChangeMessageVisibility, sqs:GetQueueAttributes, sqs:GetQueueUrl, sqs:SendMessage]
+                Resource:
+                  - !GetAtt DeadLetterQueue.Arn
+                  - !GetAtt SourceQueue.Arn
+                  - !GetAtt PaymentsDLQ.Arn
+                  - !GetAtt PaymentsSource.Arn
+                  - !GetAtt ShippingDLQ.Arn
+                  - !GetAtt ShippingSource.Arn
+              - Effect: Allow
+                Action: [s3:PutObject, s3:GetObject, s3:ListBucket]
+                Resource: [!GetAtt QuarantineBucket.Arn, !Sub '${QuarantineBucket.Arn}/*']
+              - Effect: Allow
+                Action: [bedrock:InvokeModel, bedrock:InvokeModelWithResponseStream]
+                Resource: !Ref BedrockResourceArns
+              - Effect: Allow
+                Action:
+                  - cognito-idp:InitiateAuth
+                  - cognito-idp:SignUp
+                  - cognito-idp:ConfirmSignUp
+                  - cognito-idp:GetUser
+                  - cognito-idp:ListUsers
+                  - cognito-idp:DescribeUserPool
+                  - cognito-idp:ResendConfirmationCode
+                  - cognito-idp:AdminConfirmSignUp
+                  - cognito-idp:AdminDeleteUser
+                  - cognito-idp:AdminGetUser
+                Resource: !GetAtt UserPool.Arn
+              - Effect: Allow
+                Action: cloudformation:DescribeStacks
+                Resource: !Sub arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${AWS::StackName}/*
+              - Effect: Allow
+                Action: sts:GetCallerIdentity
+                Resource: '*'
+
+  AppSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: DLQ Judge CloudFront origin-facing only (no SSH)
+      VpcId: !Ref VpcId
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+      Tags: [{Key: project, Value: dlq-judge}]
+
+  AppSecurityGroupIngressCloudFront:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref AppSecurityGroup
+      IpProtocol: tcp
+      FromPort: 8765
+      ToPort: 8765
+      SourcePrefixListId: !Ref CloudFrontPrefixListId
+      Description: CloudFront origin-facing managed prefix list
+
+  AppInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: !Ref LatestAmiId
+      IamInstanceProfile: !Ref InstanceProfile
+      NetworkInterfaces:
+        - DeviceIndex: '0'
+          SubnetId: !Ref SubnetId
+          GroupSet: [!Ref AppSecurityGroup]
+          AssociatePublicIpAddress: true
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: 40
+            VolumeType: gp3
+            Encrypted: true
+            DeleteOnTermination: false
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -euxo pipefail
+          echo waiting_for_deploy_package > /var/log/dlqj-boot.txt
+          dnf -y install python3.11 python3.11-pip unzip || dnf -y install python3 python3-pip unzip
+          mkdir -p /opt/dlq-judge/runs
+          cat >/etc/dlqj.env <<EOF
+          AWS_DEFAULT_REGION=${AWS::Region}
+          DLQJ_REGION=${AWS::Region}
+          DLQJ_ACCOUNT_ID=${AWS::AccountId}
+          DLQJ_BEDROCK_MODEL_ID=amazon.nova-micro-v1:0
+          DLQJ_BUCKET=${QuarantineBucket}
+          DLQJ_COGNITO_USER_POOL_ID=${UserPool}
+          DLQJ_COGNITO_CLIENT_ID=${UserPoolClient}
+          DLQJ_DECIDER_URL=http://127.0.0.1:8000
+          DLQJ_DECIDER_TIMEOUT_S=120
+          DLQJ_RUNS_DIR=/opt/dlq-judge/runs
+          DLQJ_UI_PORT=8765
+          DLQJ_BIND=0.0.0.0
+          DLQJ_ALLOW_APPLY=1
+          DLQJ_STACK_NAME=dlq-judge
+          EOF
+          echo bootstrap_ok >> /var/log/dlqj-boot.txt
+      Tags:
+        - {Key: project, Value: dlq-judge}
+        - {Key: Name, Value: dlqj-app}
+
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: dlq-judge public UI
+        DefaultRootObject: index.html
+        Origins:
+          - Id: ec2-ui
+            DomainName: !GetAtt AppInstance.PublicDnsName
+            CustomOriginConfig:
+              HTTPPort: 8765
+              OriginProtocolPolicy: http-only
+              OriginReadTimeout: 60
+        DefaultCacheBehavior:
+          TargetOriginId: ec2-ui
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+          CachedMethods: [GET, HEAD, OPTIONS]
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # CachingDisabled
+          OriginRequestPolicyId: 216adef6-5c7f-47e4-b989-5492eafa07d3 # AllViewer
+          Compress: true
+        PriceClass: PriceClass_100
+        HttpVersion: http2
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+      Tags: [{Key: project, Value: dlq-judge}]
+
+Outputs:
+  SourceQueueUrl: {Value: !Ref SourceQueue}
+  DeadLetterQueueUrl: {Value: !Ref DeadLetterQueue}
+  PaymentsDLQUrl: {Value: !Ref PaymentsDLQ}
+  ShippingDLQUrl: {Value: !Ref ShippingDLQ}
+  QuarantineBucketName: {Value: !Ref QuarantineBucket}
+  DeployBucketName: {Value: !Ref DeployBucket}
+  RunnerRoleArn: {Value: !GetAtt RunnerRole.Arn}
+  InstanceRoleArn: {Value: !GetAtt InstanceRole.Arn}
+  CognitoUserPoolId: {Value: !Ref UserPool}
+  CognitoClientId: {Value: !Ref UserPoolClient}
+  CognitoRegion: {Value: !Ref AWS::Region}
+  InstanceId: {Value: !Ref AppInstance}
+  InstancePublicDns: {Value: !GetAtt AppInstance.PublicDnsName}
+  PublicUrl: {Value: !Sub 'https://${CloudFrontDistribution.DomainName}/'}
+  CloudFrontDomain: {Value: !GetAtt CloudFrontDistribution.DomainName}

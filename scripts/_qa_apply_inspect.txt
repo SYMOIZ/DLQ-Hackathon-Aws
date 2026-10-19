@@ -1,0 +1,62 @@
+summary {
+  "run_id": "20261018T160623Z",
+  "queue": "dlqj-payments-dlq",
+  "mode": "applied",
+  "processed": 50,
+  "counts": {
+    "redrive_now": 0,
+    "redrive_later": 0,
+    "quarantine_poison": 0,
+    "discard_duplicate": 0,
+    "escalate_human": 50
+  },
+  "status_counts": {
+    "planned": 0,
+    "applied": 50,
+    "skipped": 0,
+    "failed": 0
+  },
+  "actionable_count": 0
+}
+actions {'escalate_human': 50}
+statuses {'applied': 50}
+sample mid 38b6acbf-6be3-4b20-9c9b-5bb78d654b37
+16f145f81a3a.json
+bde6e8d0a368.json
+16f145f81a3a.json {
+  "job_id": "16f145f81a3a",
+  "kind": "triage",
+  "status": "succeeded",
+  "progress": 100,
+  "message": "done",
+  "created_at": "2026-10-18T16:06:23Z",
+  "updated_at": "2026-10-18T16:09:55Z",
+  "result": {
+    "run_id": "20261018T160623Z"
+  },
+  "error": null,
+  "meta": {
+    "apply": false
+  }
+}
+bde6e8d0a368.json {
+  "job_id": "bde6e8d0a368",
+  "kind": "apply",
+  "status": "succeeded",
+  "progress": 100,
+  "message": "done",
+  "created_at": "2026-10-18T16:30:12Z",
+  "updated_at": "2026-10-18T16:30:20Z",
+  "result": {
+    "run_id": "20261018T160623Z",
+    "applied": 50,
+    "skipped": 0,
+    "failed": 0
+  },
+  "error": null,
+  "meta": {
+    "run_id": "20261018T160623Z"
+  }
+}
+
+ERR

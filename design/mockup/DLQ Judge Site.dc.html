@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#f6f7f8}
+a{color:var(--a-now-ink);text-decoration:none}a:hover{text-decoration:underline}
+.dj{--bg:oklch(0.982 0.002 250);--panel:oklch(1 0 0);--sunk:oklch(0.968 0.003 250);--line:oklch(0.918 0.004 250);--line2:oklch(0.87 0.006 250);--fg:oklch(0.23 0.012 255);--muted:oklch(0.5 0.012 255);--faint:oklch(0.64 0.01 255);
+--a-now:oklch(0.6 0.15 255);--a-now-ink:oklch(0.47 0.15 255);--a-later:oklch(0.64 0.11 190);--a-later-ink:oklch(0.46 0.09 190);--a-quar:oklch(0.76 0.14 75);--a-quar-ink:oklch(0.5 0.11 65);--a-disc:oklch(0.64 0.01 255);--a-disc-ink:oklch(0.45 0.01 255);--a-esc:oklch(0.6 0.19 25);--a-esc-ink:oklch(0.5 0.18 25);--br:oklch(0.6 0.15 300);--br-ink:oklch(0.48 0.15 300);--ok:oklch(0.63 0.13 150);--ok-ink:oklch(0.46 0.11 150);--primary:oklch(0.25 0.015 255);--on-primary:oklch(0.99 0 0);--shadow:0 1px 2px oklch(0 0 0 / .05)}
+.dj[data-theme=dark]{--bg:oklch(0.165 0.006 255);--panel:oklch(0.2 0.007 255);--sunk:oklch(0.182 0.006 255);--line:oklch(0.275 0.008 255);--line2:oklch(0.34 0.01 255);--fg:oklch(0.94 0.004 255);--muted:oklch(0.71 0.01 255);--faint:oklch(0.56 0.01 255);
+--a-now-ink:oklch(0.8 0.11 255);--a-later-ink:oklch(0.82 0.09 190);--a-quar-ink:oklch(0.85 0.12 80);--a-disc-ink:oklch(0.8 0.01 255);--a-esc-ink:oklch(0.78 0.13 25);--br-ink:oklch(0.8 0.11 300);--ok-ink:oklch(0.8 0.11 150);--primary:oklch(0.94 0.004 255);--on-primary:oklch(0.17 0.006 255);--shadow:none}
+.dj input,.dj select,.dj button{font-family:inherit}
+.dj input:focus,.dj select:focus{border-color:var(--a-now)!important;outline:none}
+</style>
+</helmet>
+<div class="dj" data-theme="{{ theme }}" style="min-height:100vh;min-width:1100px;background:var(--bg);color:var(--fg);font-family:'Geist',system-ui,sans-serif;font-size:14px;line-height:1.5">
+
+<nav style="position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:0 48px;height:60px;background:color-mix(in oklch, var(--bg) 88%, transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)">
+  <button onClick="{{ toLanding }}" style="display:flex;align-items:center;gap:10px;border:0;background:none;color:var(--fg);cursor:pointer;padding:0">
+    <span style="width:22px;height:22px;border-radius:5px;background:var(--fg);display:grid;place-items:center"><span style="width:8px;height:8px;background:var(--bg);transform:rotate(45deg)"></span></span><span style="font-weight:600;font-size:15px;letter-spacing:-0.01em">DLQ Judge</span>
+  </button>
+  <div style="display:flex;align-items:center;gap:28px;font-size:13.5px">
+    <button onClick="{{ jumpHow }}" style="border:0;background:none;color:var(--muted);cursor:pointer;font-size:13.5px">How it works</button>
+    <button onClick="{{ jumpActions }}" style="border:0;background:none;color:var(--muted);cursor:pointer;font-size:13.5px">Actions</button>
+    <button onClick="{{ jumpSafety }}" style="border:0;background:none;color:var(--muted);cursor:pointer;font-size:13.5px">Safety</button>
+    <button onClick="{{ jumpBench }}" style="border:0;background:none;color:var(--muted);cursor:pointer;font-size:13.5px">Benchmark</button>
+    <button onClick="{{ jumpSetup }}" style="border:0;background:none;color:var(--muted);cursor:pointer;font-size:13.5px">Setup</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <button onClick="{{ toggleTheme }}" style="border:1px solid var(--line2);background:var(--panel);color:var(--fg);border-radius:6px;padding:6px 10px;font-size:12px;cursor:pointer">{{ themeLabel }}</button>
+    <button onClick="{{ toLogin }}" style="border:0;background:none;color:var(--fg);padding:7px 12px;font-size:13.5px;cursor:pointer">Log in</button>
+    <button onClick="{{ toSignup }}" style="border:1px solid var(--primary);background:var(--primary);color:var(--on-primary);padding:7px 14px;border-radius:6px;font-size:13.5px;font-weight:500;cursor:pointer">Sign up</button>
+  </div>
+</nav>
+
+<sc-if value="{{ isLanding }}" hint-placeholder-val="{{ true }}">
+<div>
+  <section style="max-width:1200px;margin:0 auto;padding:84px 48px 72px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:56px;align-items:center">
+    <div style="display:flex;flex-direction:column;gap:22px">
+      <span style="align-self:flex-start;font-family:'Geist Mono',monospace;font-size:11.5px;padding:4px 10px;border:1px solid var(--line2);border-radius:999px;color:var(--muted)">#strands-decider-2b · #policy</span>
+      <h1 style="margin:0;font-size:52px;line-height:1.05;letter-spacing:-0.03em;font-weight:500;text-wrap:balance">Empty your dead-letter queue safely, and see what is actually broken.</h1>
+      <p style="margin:0;font-size:17px;color:var(--muted);text-wrap:pretty;max-width:520px">DLQ Judge decides what to do with every failed Amazon SQS message. A fast local model sorts hundreds of messages in seconds; Amazon Bedrock is called only for the hard cases and to explain failure clusters.</p>
+      <div style="display:flex;gap:10px;align-items:center">
+        <button onClick="{{ toSignup }}" style="border:1px solid var(--primary);background:var(--primary);color:var(--on-primary);padding:11px 20px;border-radius:7px;font-size:14.5px;font-weight:500;cursor:pointer">Connect your AWS account</button>
+        <a href="DLQ Judge.dc.html" style="border:1px solid var(--line2);background:var(--panel);color:var(--fg);padding:11px 20px;border-radius:7px;font-size:14.5px">View sample report</a>
+      </div>
+      <div style="font-family:'Geist Mono',monospace;font-size:12.5px;padding:12px 14px;border-radius:8px;background:var(--panel);border:1px solid var(--line);align-self:flex-start;color:var(--muted)"><span style="color:var(--faint)">$</span> <span style="color:var(--fg)">dlq-judge triage --queue orders-dlq</span><span style="color:var(--faint)">  # dry run by default</span></div>
+    </div>
+    <div style="border:1px solid var(--line);border-radius:12px;background:var(--panel);box-shadow:0 20px 40px oklch(0 0 0 / .07);overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)"><span style="font-family:'Geist Mono',monospace;font-weight:500">orders-dlq</span><span style="font-size:11.5px;padding:2px 8px;border:1px dashed var(--line2);border-radius:999px;color:var(--muted)">Dry run</span></div>
+      <div style="padding:16px;display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
+        <sc-for list="{{ heroCards }}" as="h" hint-placeholder-count="5"><div style="border:1px solid var(--line);border-radius:8px;padding:9px 10px;display:flex;flex-direction:column;gap:2px"><span style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--muted)"><span style="width:7px;height:7px;border-radius:2px;background:{{ h.color }}"></span>{{ h.label }}</span><span style="font-size:22px;font-weight:500;letter-spacing:-0.02em">{{ h.n }}</span></div></sc-for>
+      </div>
+      <div style="padding:0 16px 16px;display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;align-items:flex-end;gap:3px;height:96px;border-bottom:1px solid var(--line2);position:relative">
+          <sc-for list="{{ heroBars }}" as="hb" hint-placeholder-count="20"><div style="flex:1;height:{{ hb.h }}%;background:{{ hb.c }};border-radius:2px 2px 0 0"></div></sc-for>
+        </div>
+        <div style="display:flex;font-size:10.5px;color:var(--muted)"><span style="width:43%;color:var(--a-esc-ink)">&lt; 0.60 escalate</span><span style="width:36%;color:var(--br-ink)">0.60–0.85 Bedrock</span><span style="flex:1;color:var(--ok-ink)">≥ 0.85 auto</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);background:var(--sunk)">
+        <div style="padding:10px 16px"><div style="font-size:11px;color:var(--muted)">Messages</div><b style="font-weight:500;font-size:16px">300</b></div>
+        <div style="padding:10px 16px;border-left:1px solid var(--line)"><div style="font-size:11px;color:var(--muted)">Median latency</div><b style="font-weight:500;font-size:16px">38 ms</b></div>
+        <div style="padding:10px 16px;border-left:1px solid var(--line)"><div style="font-size:11px;color:var(--muted)">Bedrock calls</div><b style="font-weight:500;font-size:16px">44 <span style="color:var(--faint);font-size:12px">vs 300</span></b></div>
+      </div>
+    </div>
+  </section>
+
+  <section style="border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--panel)">
+    <div style="max-width:1200px;margin:0 auto;padding:56px 48px;display:grid;grid-template-columns:260px minmax(0,1fr);gap:48px">
+      <div><h2 style="margin:0;font-size:24px;font-weight:500;letter-spacing:-0.02em">The problem</h2><p style="margin:10px 0 0;color:var(--muted)">DLQs fill up silently. Clearing them is manual, repetitive and risky: redriving a bad message fails again, and deleting a good one loses data.</p></div>
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px">
+        <sc-for list="{{ users }}" as="u" hint-placeholder-count="3"><div style="border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px"><b style="font-weight:600">{{ u.who }}</b><div><div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint)">Pain today</div><div style="color:var(--muted);font-size:13px">{{ u.pain }}</div></div><div><div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint)">What DLQ Judge does</div><div style="font-size:13px">{{ u.job }}</div></div></div></sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section id="how" style="max-width:1200px;margin:0 auto;padding:72px 48px;display:flex;flex-direction:column;gap:28px">
+    <div><h2 style="margin:0;font-size:28px;font-weight:500;letter-spacing:-0.02em">One decision per message, three confidence bands</h2><p style="margin:8px 0 0;color:var(--muted);max-width:680px">Run one command and get every message sorted, safe actions applied, and a report in under a minute for a few hundred messages.</p></div>
+    <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px">
+      <sc-for list="{{ flow }}" as="f" hint-placeholder-count="4"><div style="border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow)"><span style="font-family:'Geist Mono',monospace;font-size:11.5px;color:{{ f.color }}">{{ f.n }}</span><b style="font-weight:600">{{ f.title }}</b><span style="color:var(--muted);font-size:13px">{{ f.text }}</span></div></sc-for>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px">
+      <sc-for list="{{ bandsInfo }}" as="b" hint-placeholder-count="3"><div style="border:1px solid var(--line);border-top:3px solid {{ b.color }};background:var(--panel);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:4px"><span style="font-family:'Geist Mono',monospace;font-weight:500;font-size:15px">{{ b.range }}</span><span style="font-weight:500">{{ b.name }}</span><span style="color:var(--muted);font-size:13px">{{ b.text }}</span></div></sc-for>
+    </div>
+  </section>
+
+  <section id="actions" style="border-top:1px solid var(--line);background:var(--panel)">
+    <div style="max-width:1200px;margin:0 auto;padding:64px 48px;display:flex;flex-direction:column;gap:24px">
+      <div><h2 style="margin:0;font-size:28px;font-weight:500;letter-spacing:-0.02em">Five actions</h2><p style="margin:8px 0 0;color:var(--muted)">The question for every message: "What is the safest next action for this failed message?"</p></div>
+      <div style="border:1px solid var(--line);border-radius:10px;overflow:hidden">
+        <sc-for list="{{ actions }}" as="a" hint-placeholder-count="5"><div style="display:grid;grid-template-columns:200px 200px minmax(0,1fr) 220px;align-items:center;gap:16px;padding:13px 18px;border-bottom:1px solid var(--line)"><span style="display:inline-flex;align-items:center;gap:7px;align-self:center;justify-self:start;padding:3px 9px;border-radius:5px;font-weight:500;font-size:12.5px;background:color-mix(in oklch, {{ a.color }} 15%, transparent);color:{{ a.ink }}"><span style="width:6px;height:6px;border-radius:50%;background:{{ a.color }}"></span>{{ a.label }}</span><code style="font-family:'Geist Mono',monospace;font-size:12px;color:var(--muted)">{{ a.key }}</code><span>{{ a.meaning }}</span><span style="color:var(--muted);font-size:13px">{{ a.does }}</span></div></sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section id="safety" style="max-width:1200px;margin:0 auto;padding:72px 48px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:48px">
+    <div style="display:flex;flex-direction:column;gap:18px">
+      <h2 style="margin:0;font-size:28px;font-weight:500;letter-spacing:-0.02em">Safety rules, always on</h2>
+      <sc-for list="{{ safety }}" as="s" hint-placeholder-count="5"><div style="display:grid;grid-template-columns:20px minmax(0,1fr);gap:10px"><span style="width:18px;height:18px;border-radius:50%;background:color-mix(in oklch, var(--ok) 18%, transparent);color:var(--ok-ink);display:grid;place-items:center;font-size:11px;font-weight:700">✓</span><div><b style="font-weight:500">{{ s.t }}</b><div style="color:var(--muted);font-size:13px">{{ s.d }}</div></div></div></sc-for>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px">
+      <h2 style="margin:0;font-size:28px;font-weight:500;letter-spacing:-0.02em">Where Bedrock is used</h2>
+      <sc-for list="{{ bedrock }}" as="b" hint-placeholder-count="3"><div style="border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:14px 16px"><b style="font-weight:600;color:var(--br-ink)">{{ b.t }}</b><div style="color:var(--muted);font-size:13px">{{ b.d }}</div></div></sc-for>
+      <div style="font-size:13px;color:var(--muted);padding:12px 14px;border:1px dashed var(--line2);border-radius:8px">Every explanation cites message IDs and error fields. Claims without evidence are labelled <b style="color:var(--a-quar-ink);font-weight:600">unverified</b>. Bedrock never triggers an action alone; it can only confirm or block the Decider's choice.</div>
+    </div>
+  </section>
+
+  <section id="bench" style="border-top:1px solid var(--line);background:var(--panel)">
+    <div style="max-width:1200px;margin:0 auto;padding:64px 48px;display:flex;flex-direction:column;gap:22px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px"><div><h2 style="margin:0;font-size:28px;font-weight:500;letter-spacing:-0.02em">Benchmarked against two baselines</h2><p style="margin:8px 0 0;color:var(--muted)">Same 300 labelled messages, 20% with unseen error wording. Results are published as measured.</p></div><span style="flex:none;font-family:'Geist Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:5px;border:1px solid var(--a-quar);color:var(--a-quar-ink)">Sample data</span></div>
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px">
+        <sc-for list="{{ benchCards }}" as="b" hint-placeholder-count="4"><div style="border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px"><span style="font-size:12px;color:var(--muted)">{{ b.m }}</span><sc-for list="{{ b.rows }}" as="r" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:90px minmax(0,1fr) 62px;gap:8px;align-items:center;font-size:12px"><span style="color:var(--muted)">{{ r.n }}</span><span style="height:5px;border-radius:3px;background:var(--sunk)"><span style="display:block;height:5px;border-radius:3px;min-width:2px;width:{{ r.w }}%;background:{{ r.c }}"></span></span><span style="font-family:'Geist Mono',monospace;text-align:right;font-weight:{{ r.bw }}">{{ r.v }}</span></div></sc-for></div></sc-for>
+      </div>
+      <a href="DLQ Judge.dc.html">Open the full benchmark view →</a>
+    </div>
+  </section>
+
+  <section id="setup" style="max-width:1200px;margin:0 auto;padding:72px 48px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:48px">
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <h2 style="margin:0;font-size:28px;font-weight:500;letter-spacing:-0.02em">Runs in your account</h2>
+      <p style="margin:0;color:var(--muted)">The agent and Decider run on your machine. SQS, S3 and Bedrock are the only AWS services, all in one account and region, with no always-on compute. Calls to Bedrock are capped per run and logged.</p>
+      <div style="border:1px solid var(--line);background:var(--panel);border-radius:10px;overflow:hidden">
+        <sc-for list="{{ deps }}" as="d" hint-placeholder-count="6"><div style="display:grid;grid-template-columns:200px minmax(0,1fr) 80px;gap:10px;padding:9px 14px;border-bottom:1px solid var(--line);font-size:13px"><span style="font-family:'Geist Mono',monospace;font-size:12px">{{ d.n }}</span><span style="color:var(--muted)">{{ d.p }}</span><span style="text-align:right;color:{{ d.c }}">{{ d.s }}</span></div></sc-for>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <h2 style="margin:0;font-size:28px;font-weight:500;letter-spacing:-0.02em">Reusable pattern</h2>
+      <p style="margin:0;color:var(--muted)">"Failed-Message Recovery": one question, five options, a three-band confidence policy and a hook that runs before any destructive queue action. For a new message source, change only the state builder and thresholds.</p>
+      <pre style="margin:0;padding:14px 16px;border-radius:10px;border:1px solid var(--line);background:var(--panel);font-family:'Geist Mono',monospace;font-size:12px;line-height:1.7;color:var(--muted)">patterns/failed_message_recovery/
+├─ question.py   <span style="color:var(--faint)"># typed question + 5 options</span>
+├─ state.py      <span style="color:var(--faint)"># SQS, EventBridge, Kinesis, Step Functions</span>
+├─ policy.py     <span style="color:var(--faint)"># thresholds + safety rules</span>
+├─ hook.py       <span style="color:var(--faint)"># runs before redrive / delete</span>
+└─ README.md</pre>
+    </div>
+  </section>
+
+  <section style="border-top:1px solid var(--line);background:var(--fg);color:var(--bg)">
+    <div style="max-width:1200px;margin:0 auto;padding:56px 48px;display:flex;align-items:center;justify-content:space-between;gap:24px">
+      <div><h2 style="margin:0;font-size:28px;font-weight:500;letter-spacing:-0.02em">Start with a dry run.</h2><p style="margin:6px 0 0;opacity:.7">Nothing is changed until you apply actions.</p></div>
+      <button onClick="{{ toSignup }}" style="border:0;background:var(--bg);color:var(--fg);padding:12px 22px;border-radius:7px;font-size:14.5px;font-weight:500;cursor:pointer">Sign up and connect AWS</button>
+    </div>
+  </section>
+  <footer style="padding:22px 48px;display:flex;justify-content:space-between;font-size:12px;color:var(--muted);border-top:1px solid var(--line)"><span>DLQ Judge · mockup with synthetic sample data</span><span style="font-family:'Geist Mono',monospace">Amazon SQS · S3 · Bedrock</span></footer>
+</div>
+</sc-if>
+
+<sc-if value="{{ isLogin }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;place-items:center;padding:72px 24px;min-height:calc(100vh - 60px);box-sizing:border-box">
+  <div style="width:400px;display:flex;flex-direction:column;gap:20px">
+    <div><h1 style="margin:0;font-size:26px;font-weight:500;letter-spacing:-0.02em">Log in to DLQ Judge</h1><p style="margin:6px 0 0;color:var(--muted)">View runs, reports and audit logs for your queues.</p></div>
+    <div style="display:flex;flex-direction:column;gap:10px;border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:22px;box-shadow:var(--shadow)">
+      <button style="display:flex;align-items:center;justify-content:center;gap:10px;border:1px solid var(--line2);background:var(--panel);color:var(--fg);padding:10px;border-radius:7px;font-size:13.5px;cursor:pointer"><span style="width:14px;height:14px;border-radius:3px;background:oklch(0.72 0.15 55)"></span>Continue with AWS IAM Identity Center</button>
+      <button style="display:flex;align-items:center;justify-content:center;gap:10px;border:1px solid var(--line2);background:var(--panel);color:var(--fg);padding:10px;border-radius:7px;font-size:13.5px;cursor:pointer"><span style="width:14px;height:14px;border-radius:50%;background:var(--fg)"></span>Continue with GitHub</button>
+      <div style="display:flex;align-items:center;gap:10px;color:var(--faint);font-size:12px"><span style="flex:1;height:1px;background:var(--line)"></span>or<span style="flex:1;height:1px;background:var(--line)"></span></div>
+      <label style="display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:500">Work email<input value="ava@example-corp.test" style="padding:9px 11px;border:1px solid var(--line2);border-radius:6px;background:var(--sunk);color:var(--fg);font-size:14px"></label>
+      <label style="display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:500"><span style="display:flex;justify-content:space-between">Password<a href="#" style="font-weight:400;font-size:12px">Forgot password?</a></span><input type="password" value="password123" style="padding:9px 11px;border:1px solid var(--line2);border-radius:6px;background:var(--sunk);color:var(--fg);font-size:14px"></label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)"><input type="checkbox" checked>Keep me signed in on this device</label>
+      <a href="DLQ Judge.dc.html" style="display:block;text-align:center;border:1px solid var(--primary);background:var(--primary);color:var(--on-primary);padding:10px;border-radius:7px;font-size:14px;font-weight:500">Log in</a>
+    </div>
+    <div style="text-align:center;font-size:13px;color:var(--muted)">New here? <button onClick="{{ toSignup }}" style="border:0;background:none;color:var(--a-now-ink);cursor:pointer;font-size:13px;padding:0">Create an account</button></div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isSignup }}" hint-placeholder-val="{{ false }}">
+<div style="max-width:1040px;margin:0 auto;padding:44px 32px 72px;display:grid;grid-template-columns:230px minmax(0,1fr);gap:48px">
+  <aside style="display:flex;flex-direction:column;gap:6px">
+    <h1 style="margin:0 0 14px;font-size:20px;font-weight:500;letter-spacing:-0.02em">Set up DLQ Judge</h1>
+    <sc-for list="{{ steps }}" as="s" hint-placeholder-count="4">
+      <div style="display:grid;grid-template-columns:24px minmax(0,1fr);gap:10px;padding:8px 0"><span style="width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:11.5px;font-weight:600;border:1px solid {{ s.bd }};background:{{ s.bg }};color:{{ s.fg }}">{{ s.mark }}</span><div><div style="font-weight:{{ s.w }};color:{{ s.tc }}">{{ s.t }}</div><div style="font-size:12px;color:var(--muted)">{{ s.d }}</div></div></div>
+    </sc-for>
+    <div style="margin-top:20px;font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px">Already have an account? <button onClick="{{ toLogin }}" style="border:0;background:none;color:var(--a-now-ink);cursor:pointer;font-size:12px;padding:0">Log in</button></div>
+  </aside>
+
+  <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
+  <sc-if value="{{ s1 }}" hint-placeholder-val="{{ true }}">
+    <div style="border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:26px;display:flex;flex-direction:column;gap:14px;box-shadow:var(--shadow)">
+      <div><h2 style="margin:0;font-size:20px;font-weight:500">Create your account</h2><p style="margin:4px 0 0;color:var(--muted)">Reports and audit logs are tied to your team.</p></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <label style="display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:500">Full name<input value="Ava Lindqvist" style="padding:9px 11px;border:1px solid var(--line2);border-radius:6px;background:var(--sunk);color:var(--fg);font-size:14px"></label>
+        <label style="display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:500">Team name<input value="Platform Engineering" style="padding:9px 11px;border:1px solid var(--line2);border-radius:6px;background:var(--sunk);color:var(--fg);font-size:14px"></label>
+      </div>
+      <label style="display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:500">Work email<input value="ava@example-corp.test" style="padding:9px 11px;border:1px solid var(--line2);border-radius:6px;background:var(--sunk);color:var(--fg);font-size:14px"></label>
+      <label style="display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:500">Password<input type="password" value="correct-horse-battery" style="padding:9px 11px;border:1px solid var(--line2);border-radius:6px;background:var(--sunk);color:var(--fg);font-size:14px"><span style="display:flex;gap:4px;margin-top:2px"><span style="flex:1;height:3px;border-radius:2px;background:var(--ok)"></span><span style="flex:1;height:3px;border-radius:2px;background:var(--ok)"></span><span style="flex:1;height:3px;border-radius:2px;background:var(--ok)"></span><span style="flex:1;height:3px;border-radius:2px;background:var(--line2)"></span></span><span style="font-weight:400;font-size:11.5px;color:var(--muted)">Strong · 12+ characters</span></label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)"><input type="checkbox" checked>I agree to the Terms and Privacy Policy</label>
+      <button onClick="{{ next }}" style="align-self:flex-start;border:1px solid var(--primary);background:var(--primary);color:var(--on-primary);padding:10px 18px;border-radius:7px;font-size:14px;font-weight:500;cursor:pointer">Continue</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ s2 }}" hint-placeholder-val="{{ false }}">
+    <div style="border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:26px;display:flex;flex-direction:column;gap:18px;box-shadow:var(--shadow)">
+      <div><h2 style="margin:0;font-size:20px;font-weight:500">Connect your AWS account</h2><p style="margin:4px 0 0;color:var(--muted)">DLQ Judge assumes a read/act role in your account. No long-lived access keys are stored.</p></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:3px;border:1px solid var(--line);border-radius:8px;background:var(--sunk)">
+        <sc-for list="{{ methods }}" as="m" hint-placeholder-count="3"><button onClick="{{ m.go }}" style="border:0;border-radius:6px;padding:8px;font-size:13px;cursor:pointer;background:{{ m.bg }};color:var(--fg);box-shadow:{{ m.sh }};font-weight:{{ m.w }}">{{ m.label }}</button></sc-for>
+      </div>
+      <sc-if value="{{ methodCfn }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:grid;grid-template-columns:24px minmax(0,1fr);gap:10px"><b style="font-family:'Geist Mono',monospace;color:var(--faint)">1</b><div><b style="font-weight:500">Launch the CloudFormation stack</b><div style="color:var(--muted);font-size:13px">Creates the IAM role <code style="font-family:'Geist Mono',monospace;font-size:12px">DLQJudgeRole</code> with the permissions listed below. It takes about a minute.</div><button style="margin-top:8px;border:1px solid var(--line2);background:var(--panel);color:var(--fg);padding:7px 12px;border-radius:6px;font-size:13px;cursor:pointer">Open in AWS Console ↗</button></div></div>
+          <div style="display:grid;grid-template-columns:24px minmax(0,1fr);gap:10px"><b style="font-family:'Geist Mono',monospace;color:var(--faint)">2</b><div style="display:flex;flex-direction:column;gap:6px"><b style="font-weight:500">Paste the role ARN from the stack outputs</b><input value="arn:aws:iam::123456789012:role/DLQJudgeRole" style="padding:9px 11px;border:1px solid var(--line2);border-radius:6px;background:var(--sunk);color:var(--fg);font-family:'Geist Mono',monospace;font-size:12.5px"></div></div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ methodCli }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:8px"><span style="color:var(--muted);font-size:13px">Run in a terminal signed in to the target account:</span><pre style="margin:0;padding:12px 14px;border-radius:8px;background:var(--sunk);border:1px solid var(--line);font-family:'Geist Mono',monospace;font-size:12px;line-height:1.7;white-space:pre-wrap">$ dlq-judge connect --region us-east-1 \
+    --external-id xid_7f3a9c21d0b4
+✓ Created role DLQJudgeRole</pre><input value="arn:aws:iam::123456789012:role/DLQJudgeRole" style="padding:9px 11px;border:1px solid var(--line2);border-radius:6px;background:var(--sunk);color:var(--fg);font-family:'Geist Mono',monospace;font-size:12.5px"></div>
+      </sc-if>
+      <sc-if value="{{ methodSso }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:8px"><span style="color:var(--muted);font-size:13px">Use an existing IAM Identity Center permission set for local CLI runs.</span><label style="display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:500">SSO start URL<input value="https://example-corp.awsapps.test/start" style="padding:9px 11px;border:1px solid var(--line2);border-radius:6px;background:var(--sunk);color:var(--fg);font-family:'Geist Mono',monospace;font-size:12.5px"></label><label style="display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:500">Profile<input value="platform-prod-readact" style="padding:9px 11px;border:1px solid var(--line2);border-radius:6px;background:var(--sunk);color:var(--fg);font-family:'Geist Mono',monospace;font-size:12.5px"></label></div>
+      </sc-if>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <label style="display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:500">Region<select style="padding:9px 10px;border:1px solid var(--line2);border-radius:6px;background:var(--sunk);color:var(--fg);font-size:13.5px"><option>us-east-1 · N. Virginia</option><option>us-west-2 · Oregon</option><option>eu-west-1 · Ireland</option><option>eu-central-1 · Frankfurt</option></select></label>
+        <label style="display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:500">External ID<input readonly value="xid_7f3a9c21d0b4" style="padding:9px 11px;border:1px solid var(--line2);border-radius:6px;background:var(--sunk);color:var(--muted);font-family:'Geist Mono',monospace;font-size:12.5px"></label>
+      </div>
+      <div style="border:1px solid var(--line);border-radius:10px;overflow:hidden">
+        <div style="padding:10px 14px;background:var(--sunk);border-bottom:1px solid var(--line);display:flex;justify-content:space-between;font-size:12.5px"><b style="font-weight:600">Permissions requested</b><span style="color:var(--muted)">Least privilege · scoped to the queues and bucket you pick next</span></div>
+        <sc-for list="{{ perms }}" as="p" hint-placeholder-count="5"><div style="display:grid;grid-template-columns:70px minmax(0,1fr) minmax(0,1.2fr);gap:10px;padding:9px 14px;border-bottom:1px solid var(--line);font-size:12.5px;align-items:center"><b style="font-weight:600">{{ p.svc }}</b><code style="font-family:'Geist Mono',monospace;font-size:11.5px;color:var(--muted)">{{ p.acts }}</code><span style="color:var(--muted)">{{ p.why }}</span></div></sc-for>
+        <div style="padding:10px 14px;font-size:12px;color:var(--muted)">Not requested: Lambda, VPC/NAT, databases, IAM write access, or access to any other service.</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <button onClick="{{ testConn }}" style="border:1px solid var(--line2);background:var(--panel);color:var(--fg);padding:9px 16px;border-radius:7px;font-size:13.5px;cursor:pointer">{{ testLabel }}</button>
+        <sc-if value="{{ testOk }}" hint-placeholder-val="{{ false }}"><span style="display:flex;align-items:center;gap:7px;color:var(--ok-ink);font-size:13px"><span style="width:8px;height:8px;border-radius:50%;background:var(--ok)"></span>Role assumed in account 123456789012 · SQS, S3 and Bedrock reachable</span></sc-if>
+      </div>
+      <div style="display:flex;gap:8px"><button onClick="{{ back }}" style="border:1px solid var(--line2);background:var(--panel);color:var(--fg);padding:10px 16px;border-radius:7px;font-size:14px;cursor:pointer">Back</button><button onClick="{{ next }}" style="border:1px solid var(--primary);background:var(--primary);color:var(--on-primary);padding:10px 18px;border-radius:7px;font-size:14px;font-weight:500;cursor:pointer;opacity:{{ nextOp }}">Continue</button></div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ s3 }}" hint-placeholder-val="{{ false }}">
+    <div style="border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:26px;display:flex;flex-direction:column;gap:18px;box-shadow:var(--shadow)">
+      <div><h2 style="margin:0;font-size:20px;font-weight:500">Choose queues and limits</h2><p style="margin:4px 0 0;color:var(--muted)">Found 4 dead-letter queues in us-east-1.</p></div>
+      <div style="border:1px solid var(--line);border-radius:10px;overflow:hidden">
+        <sc-for list="{{ queues }}" as="q" hint-placeholder-count="4"><button onClick="{{ q.go }}" style="display:grid;grid-template-columns:22px minmax(0,1fr) 120px 150px;gap:12px;align-items:center;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:{{ q.bg }};color:var(--fg);padding:11px 14px;cursor:pointer;font-size:13px"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid {{ q.bd }};display:grid;place-items:center"><span style="width:8px;height:8px;border-radius:50%;background:{{ q.dot }}"></span></span><span><b style="font-family:'Geist Mono',monospace;font-weight:500">{{ q.name }}</b><span style="color:var(--muted);font-size:12px"> → {{ q.src }}</span></span><span style="font-family:'Geist Mono',monospace;color:var(--muted)">{{ q.n }} msgs</span><span style="color:var(--muted);font-size:12px">{{ q.note }}</span></button></sc-for>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <label style="display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:500">Quarantine bucket <span style="font-weight:400;color:var(--muted)">(optional, a local folder works for dry runs)</span><input value="s3://dlq-judge-quarantine/orders/" style="padding:9px 11px;border:1px solid var(--line2);border-radius:6px;background:var(--sunk);color:var(--fg);font-family:'Geist Mono',monospace;font-size:12.5px"></label>
+        <label style="display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:500">Bedrock model <span style="font-weight:400;color:var(--muted)">(one small model)</span><select style="padding:9px 10px;border:1px solid var(--line2);border-radius:6px;background:var(--sunk);color:var(--fg);font-size:13.5px"><option>Small text model · on-demand</option><option>Small text model · provisioned</option></select></label>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+        <label style="display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:500">Bedrock call cap per run<input value="60" style="padding:9px 11px;border:1px solid var(--line2);border-radius:6px;background:var(--sunk);color:var(--fg);font-family:'Geist Mono',monospace;font-size:13px"></label>
+        <label style="display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:500">Auto-act threshold<input value="0.85" style="padding:9px 11px;border:1px solid var(--line2);border-radius:6px;background:var(--sunk);color:var(--fg);font-family:'Geist Mono',monospace;font-size:13px"></label>
+        <label style="display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:500">Discard minimum<input value="0.90" style="padding:9px 11px;border:1px solid var(--line2);border-radius:6px;background:var(--sunk);color:var(--fg);font-family:'Geist Mono',monospace;font-size:13px"></label>
+      </div>
+      <div style="display:flex;gap:10px;padding:11px 14px;border-radius:8px;border:1px solid var(--line);background:var(--sunk);font-size:13px"><span style="width:8px;height:8px;border-radius:50%;background:var(--a-now);margin-top:6px;flex:none"></span><span><b style="font-weight:500">Dry run is the default.</b> <span style="color:var(--muted)">Actions run only after you press Apply, or pass <code style="font-family:'Geist Mono',monospace;font-size:12px">--apply</code> to the CLI.</span></span></div>
+      <div style="display:flex;gap:8px"><button onClick="{{ back }}" style="border:1px solid var(--line2);background:var(--panel);color:var(--fg);padding:10px 16px;border-radius:7px;font-size:14px;cursor:pointer">Back</button><button onClick="{{ next }}" style="border:1px solid var(--primary);background:var(--primary);color:var(--on-primary);padding:10px 18px;border-radius:7px;font-size:14px;font-weight:500;cursor:pointer">Review</button></div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ s4 }}" hint-placeholder-val="{{ false }}">
+    <div style="border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:26px;display:flex;flex-direction:column;gap:18px;box-shadow:var(--shadow)">
+      <div style="display:flex;align-items:center;gap:12px"><span style="width:34px;height:34px;border-radius:50%;background:color-mix(in oklch, var(--ok) 18%, transparent);color:var(--ok-ink);display:grid;place-items:center;font-weight:700">✓</span><div><h2 style="margin:0;font-size:20px;font-weight:500">Ready for your first run</h2><p style="margin:2px 0 0;color:var(--muted)">Review the setup, then start a dry run on <span style="font-family:'Geist Mono',monospace">orders-dlq</span>.</p></div></div>
+      <div style="border:1px solid var(--line);border-radius:10px;overflow:hidden">
+        <sc-for list="{{ summary }}" as="r" hint-placeholder-count="6"><div style="display:grid;grid-template-columns:190px minmax(0,1fr);padding:9px 14px;border-bottom:1px solid var(--line);font-size:13px"><span style="color:var(--muted)">{{ r.k }}</span><span style="font-family:'Geist Mono',monospace;font-size:12.5px">{{ r.v }}</span></div></sc-for>
+      </div>
+      <pre style="margin:0;padding:12px 14px;border-radius:8px;background:var(--sunk);border:1px solid var(--line);font-family:'Geist Mono',monospace;font-size:12px;line-height:1.7"><span style="color:var(--faint)">$</span> dlq-judge triage --queue orders-dlq <span style="color:var(--faint)"># dry run</span></pre>
+      <div style="display:flex;gap:8px"><button onClick="{{ back }}" style="border:1px solid var(--line2);background:var(--panel);color:var(--fg);padding:10px 16px;border-radius:7px;font-size:14px;cursor:pointer">Back</button><a href="DLQ Judge.dc.html" style="border:1px solid var(--primary);background:var(--primary);color:var(--on-primary);padding:10px 18px;border-radius:7px;font-size:14px;font-weight:500">Start dry run</a></div>
+    </div>
+  </sc-if>
+  </div>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;startPage&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;landing&quot;,&quot;login&quot;,&quot;signup&quot;],&quot;default&quot;:&quot;landing&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  state = { page: null, step: 1, method: 'cfn', theme: null, test: 'idle', queue: 0 };
+  scroll(id) { this.setState({ page: 'landing' }, () => setTimeout(() => { const el = document.getElementById(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 70, behavior: 'smooth' }); }, 30)); }
+  renderVals() {
+    const st = this.state, p = this.props;
+    const page = st.page ?? p.startPage ?? 'landing';
+    const theme = st.theme ?? p.theme ?? 'light';
+    const col = { now: 'var(--a-now)', later: 'var(--a-later)', quar: 'var(--a-quar)', disc: 'var(--a-disc)', esc: 'var(--a-esc)' };
+    const heroCards = [['Redrive now', 111], ['Redrive later', 64], ['Quarantine', 71], ['Discard', 29], ['Escalate', 25]].map(([label, n], i) => ({ label, n, color: Object.values(col)[i] }));
+    const hv = [2, 3, 5, 6, 9, 10, 13, 14, 12, 15, 18, 17, 20, 26, 34, 48, 64, 82, 100, 70];
+    const heroBars = hv.map((v, i) => ({ h: v, c: i < 8 ? 'var(--a-esc)' : i < 14 ? 'var(--br)' : 'var(--fg)' }));
+    const users = [
+      { who: 'Backend / platform engineer', pain: 'Reads messages one by one to decide redrive or delete.', job: 'Sorts the whole DLQ and acts on the safe cases.' },
+      { who: 'On-call engineer', pain: 'Bulk redrive replays poison messages and re-floods the DLQ.', job: 'Holds back poison messages and redrives only transient failures.' },
+      { who: 'Team lead', pain: 'No record of why messages were dropped.', job: 'Gives an audit log of every action with its confidence.' },
+    ];
+    const flow = [
+      { n: '01', color: 'var(--a-now-ink)', title: 'Read the DLQ', text: 'Builds a compact, PII-masked state per message: error type, error text, receive count, age, idempotency key.' },
+      { n: '02', color: 'var(--a-now-ink)', title: 'Decider scores all five options', text: 'Strands Decider 2B runs locally and returns a probability for each action.' },
+      { n: '03', color: 'var(--br-ink)', title: 'Bedrock only when unsure', text: 'Uncertain messages get a second opinion. Quarantined messages are grouped so one call explains a whole cluster.' },
+      { n: '04', color: 'var(--ok-ink)', title: 'Act, log, report', text: 'Safe actions are applied (after dry run). Every decision is logged with its probabilities in an HTML report.' },
+    ];
+    const bandsInfo = [
+      { range: '≥ 0.85', name: 'Act automatically', text: 'Decider acts alone.', color: 'var(--fg)' },
+      { range: '0.60–0.85', name: 'Bedrock second opinion', text: 'Act only if both agree.', color: 'var(--br)' },
+      { range: '< 0.60', name: 'Escalate to human', text: 'Missing error attributes also escalate; Decider is not called.', color: 'var(--a-esc)' },
+    ];
+    const actions = [
+      ['now', 'Redrive now', 'redrive_now', 'Transient failure that is already over', 'Send back to the source queue'],
+      ['later', 'Redrive later', 'redrive_later', 'Throttling or downstream outage', 'Send back with a delay'],
+      ['quar', 'Quarantine', 'quarantine_poison', 'Bad payload or schema; will always fail', 'Move to S3 quarantine'],
+      ['disc', 'Discard duplicate', 'discard_duplicate', 'Already processed', 'Delete from the DLQ'],
+      ['esc', 'Escalate to human', 'escalate_human', 'Unclear or high-risk', 'Leave in the DLQ and flag in the report'],
+    ].map(([v, label, key, meaning, does]) => ({ label, key, meaning, does, color: `var(--a-${v})`, ink: `var(--a-${v}-ink)` }));
+    const safety = [
+      { t: 'Dry run by default', d: 'Actions need an explicit apply step or the --apply flag.' },
+      { t: 'Discard needs ≥ 0.90 confidence and an idempotency key', d: 'Any discard below 0.90 is flagged and held in the DLQ.' },
+      { t: 'Every decision is logged', d: 'Each action is stored with its option probabilities for audit.' },
+      { t: 'No secrets sent to the model', d: 'Message bodies are truncated and PII-masked before leaving your machine.' },
+      { t: 'Bedrock calls are capped per run', d: 'Every call is logged; Bedrock can confirm or block, never act alone.' },
+    ];
+    const bedrock = [
+      { t: 'Second opinion', d: 'For messages at 0.60–0.85, Bedrock picks one of the same five options with a one-line reason.' },
+      { t: 'Cluster diagnosis', d: 'Quarantined messages are grouped by error type; Bedrock returns a likely root cause and a suggested fix.' },
+      { t: 'Run report', d: 'A short team summary of what was redriven, quarantined, discarded and escalated, and why.' },
+    ];
+    const bc = (m, v, fmt, lower) => { const mx = Math.max(...v); return { m, rows: ['Rules', 'Bedrock only', 'DLQ Judge'].map((n, i) => ({ n, v: fmt(v[i]), w: mx ? v[i] / mx * 100 : 0, c: ['var(--faint)', 'var(--br)', 'var(--a-now)'][i], bw: i === 2 ? 600 : 400 })) }; };
+    const benchCards = [bc('Accuracy', [71.3, 89, 92.3], v => v + '%'), bc('Unsafe-action rate', [4.7, 1.3, 0], v => v + '%'), bc('Median latency', [0.3, 1180, 38], v => v < 1 ? v + ' ms' : v.toLocaleString() + ' ms'), bc('Bedrock calls / 1,000', [0, 1000, 147], v => v.toLocaleString())];
+    const deps = [['strands-agents', 'Agent loop and hook', 'Required'], ['strands-decider', 'Serves Decider 2B locally', 'Required'], ['boto3', 'SQS, S3, Bedrock calls', 'Required'], ['Amazon SQS', 'Source queue and its DLQ', 'Required'], ['Amazon Bedrock', 'Second opinions, explanations', 'Required'], ['Amazon S3', 'Quarantine store', 'Optional']].map(([n, p, s]) => ({ n, p, s, c: s === 'Required' ? 'var(--fg)' : 'var(--muted)' }));
+
+    const steps = [['Account', 'Name, email, password'], ['Connect AWS', 'IAM role and region'], ['Queues', 'DLQ, bucket, limits'], ['Review', 'Start a dry run']].map(([t, d], i) => { const n = i + 1, done = st.step > n, cur = st.step === n; return { t, d, mark: done ? '✓' : n, bg: done ? 'var(--ok)' : cur ? 'var(--primary)' : 'transparent', fg: done ? 'var(--on-primary)' : cur ? 'var(--on-primary)' : 'var(--muted)', bd: done ? 'var(--ok)' : cur ? 'var(--primary)' : 'var(--line2)', w: cur ? 600 : 500, tc: cur || done ? 'var(--fg)' : 'var(--muted)' }; });
+    const methods = [['cfn', 'CloudFormation'], ['cli', 'CLI'], ['sso', 'IAM Identity Center']].map(([k, label]) => ({ label, go: () => this.setState({ method: k }), bg: st.method === k ? 'var(--panel)' : 'transparent', sh: st.method === k ? '0 0 0 1px var(--line2)' : 'none', w: st.method === k ? 500 : 400 }));
+    const perms = [['SQS', 'ReceiveMessage, SendMessage, DeleteMessage, GetQueueAttributes', 'Read the DLQ, redrive, delete duplicates'], ['S3', 'PutObject', 'Write quarantined messages to one bucket prefix'], ['Bedrock', 'InvokeModel', 'Second opinions and cluster explanations, one model'], ['STS', 'AssumeRole + external ID', 'Short-lived credentials only'], ['Logs', 'Local only', 'Audit log and HTML report stay on your machine']].map(([svc, acts, why]) => ({ svc, acts, why }));
+    const Q = [['orders-dlq', 'orders', 300, 'Selected for first run'], ['payments-dlq', 'payments', 1240, 'Large; use a batch limit'], ['notifications-dlq', 'notifications', 57, 'Idempotency keys missing'], ['inventory-dlq', 'inventory', 0, 'Empty']];
+    const queues = Q.map(([name, src, n, note], i) => ({ name, src, n: n.toLocaleString(), note, go: () => this.setState({ queue: i }), bg: st.queue === i ? 'var(--sunk)' : 'transparent', bd: st.queue === i ? 'var(--primary)' : 'var(--line2)', dot: st.queue === i ? 'var(--primary)' : 'transparent' }));
+    const q = Q[st.queue];
+    const summary = [['Account', 'Ava Lindqvist · Platform Engineering'], ['AWS account', '123456789012 · us-east-1'], ['Role', 'arn:aws:iam::123456789012:role/DLQJudgeRole'], ['Queue', `${q[0]} → ${q[1]} (${q[2]} messages)`], ['Quarantine', 's3://dlq-judge-quarantine/orders/'], ['Limits', '60 Bedrock calls · auto ≥ 0.85 · discard ≥ 0.90'], ['Mode', 'Dry run']].map(([k, v]) => ({ k, v }));
+    const testOk = st.test === 'ok';
+    return {
+      theme, themeLabel: theme === 'light' ? 'Dark' : 'Light', toggleTheme: () => this.setState({ theme: theme === 'light' ? 'dark' : 'light' }),
+      isLanding: page === 'landing', isLogin: page === 'login', isSignup: page === 'signup',
+      toLanding: () => this.setState({ page: 'landing' }), toLogin: () => this.setState({ page: 'login' }), toSignup: () => this.setState({ page: 'signup', step: 1 }),
+      jumpHow: () => this.scroll('how'), jumpActions: () => this.scroll('actions'), jumpSafety: () => this.scroll('safety'), jumpBench: () => this.scroll('bench'), jumpSetup: () => this.scroll('setup'),
+      heroCards, heroBars, users, flow, bandsInfo, actions, safety, bedrock, benchCards, deps,
+      steps, s1: st.step === 1, s2: st.step === 2, s3: st.step === 3, s4: st.step === 4,
+      next: () => { if (st.step === 2 && !testOk) return; this.setState({ step: Math.min(4, st.step + 1) }); }, back: () => this.setState({ step: Math.max(1, st.step - 1) }),
+      methods, methodCfn: st.method === 'cfn', methodCli: st.method === 'cli', methodSso: st.method === 'sso', perms,
+      testOk, testLabel: st.test === 'testing' ? 'Testing connection…' : testOk ? 'Test again' : 'Test connection', nextOp: testOk ? 1 : 0.45,
+      testConn: () => { this.setState({ test: 'testing' }); setTimeout(() => this.setState({ test: 'ok' }), 1100); },
+      queues, summary,
+    };
+  }
+}
+</script>
+</body>
+</html>
