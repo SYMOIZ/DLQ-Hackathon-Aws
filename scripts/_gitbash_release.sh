@@ -16,9 +16,11 @@ akia=re.compile(r"AKIA[0-9A-Z]{16}")
 # Real secret material only (not boto3 kwarg names)
 secret=re.compile(r"(AWS_SECRET_ACCESS_KEY|aws_secret_access_key)\s*=\s*['\"][A-Za-z0-9/+=]{20,}['\"]")
 pwd=re.compile(r"(password|Password)\s*=\s*['\"](?!&lt;|<|TestPass|password|pw|PASSWORD)[^'\"]{4,}['\"]")
-# Real deploy account only (mockup fiction IDs + unit-test IDs allowed)
-forbid_acct={"<AWS_ACCOUNT_ID>"}
-live=re.compile(r"<COGNITO_ID_FRAGMENT>|<COGNITO_ID_FRAGMENT>|<EC2_INSTANCE_ID>|<CLOUDFRONT_DOMAIN_PREFIX>|<TEST_PASSWORD>")
+# Real deploy values come from the environment, never from this file:
+#   DLQJ_FORBID_ACCOUNTS="<acct>[,<acct>]"  DLQJ_FORBID_PATTERN="<regex of live IDs>"
+import os
+forbid_acct={a for a in os.environ.get("DLQJ_FORBID_ACCOUNTS","").split(",") if a}
+live=re.compile(os.environ.get("DLQJ_FORBID_PATTERN") or r"(?!)")
 bad=[]
 def ignored(path: Path) -> bool:
     r = subprocess.run(["git","check-ignore","-q",str(path)])
@@ -74,13 +76,14 @@ git reset HEAD -- \
 
 echo "== staged secret scan =="
 "$PY" - <<'PY'
-import re, subprocess, sys
+import os, re, subprocess, sys
 blob = subprocess.check_output(["git", "diff", "--cached"], text=True, errors="ignore")
 checks = [
     (re.compile(r"AKIA[0-9A-Z]{16}"), "AKIA"),
     (re.compile(r"(AWS_SECRET_ACCESS_KEY|aws_secret_access_key)\s*=\s*['\"][A-Za-z0-9/+=]{20,}['\"]"), "aws_secret"),
-    (re.compile(r"<COGNITO_ID_FRAGMENT>|<COGNITO_ID_FRAGMENT>|<EC2_INSTANCE_ID>|<CLOUDFRONT_DOMAIN_PREFIX>|<TEST_PASSWORD>"), "live_id"),
-    (re.compile(r"\b<AWS_ACCOUNT_ID>\b"), "account_id"),
+    (re.compile(os.environ.get("DLQJ_FORBID_PATTERN") or r"(?!)"), "live_id"),
+    *[(re.compile(rf"\b{re.escape(a)}\b"), "account_id")
+      for a in os.environ.get("DLQJ_FORBID_ACCOUNTS", "").split(",") if a],
 ]
 for rx, label in checks:
     if rx.search(blob):

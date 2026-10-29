@@ -1,6 +1,6 @@
 # DEPLOYMENT_REPORT.md — DLQ Judge public deploy
 
-Date: 2026-10-18 · Region: `us-east-1` · Profile: `default`  for CFN; app uses instance role `dlqj-ec2`.
+Date: 2026-10-18 · Region: `us-east-1` · Profile: `<AWS_PROFILE>` for CFN; app uses instance role `dlqj-ec2`.
 
 ## Instance type decision
 
