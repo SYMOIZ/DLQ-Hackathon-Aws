@@ -4,6 +4,8 @@
 
 Triage SQS dead-letter queues with **Strands Decider 2B** and an Amazon Bedrock fallback.
 
+Demo Url : https://dlq-judge.vercel.app/
+
 ## The problem
 
 Failed messages pile up in SQS DLQs. Manual triage does not scale, and blindly redriving or deleting is unsafe. Operators need a confidence-aware agent that acts only when evidence is strong and escalates when it is not.
@@ -124,8 +126,7 @@ Amazon Bedrock (`DLQJ_DECIDER_URL=bedrock`) instead of the local 2B model, runs 
 
 ## Demo
 
-- Video: `VIDEO_URL`
-- Live app: `APP_URL`
+- Live app: [`APP_URL`](https://dlq-judge.vercel.app/)
 
 ## Safety
 
