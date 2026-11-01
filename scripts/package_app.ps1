@@ -9,6 +9,6 @@ Push-Location $root
 tar -czf $tgz `
   --exclude=.venv --exclude=runs --exclude=.git --exclude=dist `
   --exclude=__pycache__ --exclude=.pytest_cache --exclude=*.pyc `
-  dlq_judge patterns bench docs infra scripts pyproject.toml README.md LICENSE .env.example
+  dlq_judge ui patterns bench docs infra scripts pyproject.toml README.md LICENSE .env.example
 Pop-Location
 Write-Host "packed $tgz size=$((Get-Item $tgz).Length)"
