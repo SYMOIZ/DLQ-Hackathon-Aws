@@ -31,14 +31,14 @@ def _extract_json(text: str) -> dict[str, Any] | None:
             return None
 
 
-def _converse(cfg: Config, system: str, user: str) -> tuple[str, int]:
+def _converse(cfg: Config, system: str, user: str, *, model_id: str | None = None) -> tuple[str, int]:
     client = session(cfg).client("bedrock-runtime")
     t0 = time.perf_counter()
     last_err: Exception | None = None
     for attempt in range(3):
         try:
             resp = client.converse(
-                modelId=cfg.bedrock_model_id,
+                modelId=model_id or cfg.bedrock_model_id,
                 system=[{"text": system}],
                 messages=[{"role": "user", "content": [{"text": user}]}],
                 inferenceConfig={"maxTokens": 512, "temperature": 0.0},

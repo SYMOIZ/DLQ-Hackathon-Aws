@@ -14,10 +14,20 @@ Parameters:
   LatestAmiId:
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+  VercelTeamSlug:
+    Type: String
+    Default: ''
+    Description: Vercel team slug for OIDC federation (empty = no Vercel role)
+  VercelProject:
+    Type: String
+    Default: dlq-judge
   CloudFrontPrefixListId:
     Type: String
     Default: pl-3b927c52
     Description: com.amazonaws.global.cloudfront.origin-facing in us-east-1
+
+Conditions:
+  HasVercel: !Not [!Equals [!Ref VercelTeamSlug, '']]
 
 Resources:
   DeadLetterQueue:
@@ -285,6 +295,73 @@ Resources:
                 Action: sts:GetCallerIdentity
                 Resource: '*'
 
+  # Vercel Functions get short-lived credentials through OIDC; no access keys are stored.
+  VercelOidcProvider:
+    Type: AWS::IAM::OIDCProvider
+    Condition: HasVercel
+    Properties:
+      Url: !Sub https://oidc.vercel.com/${VercelTeamSlug}
+      ClientIdList: [!Sub 'https://vercel.com/${VercelTeamSlug}']
+      Tags: [{Key: project, Value: dlq-judge}]
+
+  VercelRole:
+    Type: AWS::IAM::Role
+    Condition: HasVercel
+    Properties:
+      RoleName: dlqj-vercel
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument: !Sub |
+        {"Version": "2012-10-17", "Statement": [{"Effect": "Allow",
+          "Principal": {"Federated": "${VercelOidcProvider}"},
+          "Action": "sts:AssumeRoleWithWebIdentity",
+          "Condition": {
+            "StringEquals": {"oidc.vercel.com/${VercelTeamSlug}:aud": "https://vercel.com/${VercelTeamSlug}"},
+            "StringLike": {"oidc.vercel.com/${VercelTeamSlug}:sub": "owner:${VercelTeamSlug}:project:${VercelProject}:environment:*"}}}]}
+      Tags: [{Key: project, Value: dlq-judge}]
+      Policies:
+        - PolicyName: dlqj-vercel-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: [sqs:ReceiveMessage, sqs:DeleteMessage, sqs:ChangeMessageVisibility, sqs:GetQueueAttributes, sqs:GetQueueUrl, sqs:SendMessage]
+                Resource:
+                  - !GetAtt DeadLetterQueue.Arn
+                  - !GetAtt SourceQueue.Arn
+                  - !GetAtt PaymentsDLQ.Arn
+                  - !GetAtt PaymentsSource.Arn
+                  - !GetAtt ShippingDLQ.Arn
+                  - !GetAtt ShippingSource.Arn
+              - Effect: Allow
+                Action: [s3:PutObject, s3:GetObject, s3:ListBucket]
+                Resource:
+                  - !GetAtt QuarantineBucket.Arn
+                  - !Sub '${QuarantineBucket.Arn}/*'
+                  - !GetAtt DeployBucket.Arn
+                  - !Sub '${DeployBucket.Arn}/*'
+              - Effect: Allow
+                Action: [bedrock:InvokeModel, bedrock:InvokeModelWithResponseStream]
+                Resource: !Ref BedrockResourceArns
+              - Effect: Allow
+                Action:
+                  - cognito-idp:InitiateAuth
+                  - cognito-idp:SignUp
+                  - cognito-idp:ConfirmSignUp
+                  - cognito-idp:GetUser
+                  - cognito-idp:ListUsers
+                  - cognito-idp:DescribeUserPool
+                  - cognito-idp:ResendConfirmationCode
+                  - cognito-idp:AdminConfirmSignUp
+                  - cognito-idp:AdminDeleteUser
+                  - cognito-idp:AdminGetUser
+                Resource: !GetAtt UserPool.Arn
+              - Effect: Allow
+                Action: cloudformation:DescribeStacks
+                Resource: !Sub arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${AWS::StackName}/*
+              - Effect: Allow
+                Action: sts:GetCallerIdentity
+                Resource: '*'
+
   AppSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -393,5 +470,8 @@ Outputs:
   CognitoRegion: {Value: !Ref AWS::Region}
   InstanceId: {Value: !Ref AppInstance}
   InstancePublicDns: {Value: !GetAtt AppInstance.PublicDnsName}
+  VercelRoleArn:
+    Condition: HasVercel
+    Value: !GetAtt VercelRole.Arn
   PublicUrl: {Value: !Sub 'https://${CloudFrontDistribution.DomainName}/'}
   CloudFrontDomain: {Value: !GetAtt CloudFrontDistribution.DomainName}

@@ -59,3 +59,6 @@ scripts/_scrub_secrets.sh
 scripts/_scrub_live_ids.py
 scripts/_hackathon_prep.sh
 scripts/_run_prep_tests.sh
+.vercel
+.env*
+!.env.example

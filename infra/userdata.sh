@@ -12,7 +12,7 @@ aws s3 cp "s3://${DEPLOY_BUCKET}/app/dlq-judge-app.tgz" /tmp/dlq-judge-app.tgz
 tar -xzf /tmp/dlq-judge-app.tgz -C /opt/dlq-judge
 python3.11 -m venv /opt/dlq-judge/.venv || python3 -m venv /opt/dlq-judge/.venv
 /opt/dlq-judge/.venv/bin/pip install -U pip
-/opt/dlq-judge/.venv/bin/pip install -e "/opt/dlq-judge[dev]"
+/opt/dlq-judge/.venv/bin/pip install -e "/opt/dlq-judge[dev,decider]"
 
 # Optional: preseed HF weights from S3 if present
 if aws s3 ls "s3://${DEPLOY_BUCKET}/models/qwen/" >/dev/null 2>&1; then

@@ -1,0 +1,11 @@
+.git
+.venv
+tests
+bench
+design
+docs
+infra
+scripts
+runs
+dist
+*.md

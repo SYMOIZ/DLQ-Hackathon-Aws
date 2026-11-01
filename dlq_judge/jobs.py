@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import threading
 import traceback
 import uuid
@@ -85,7 +86,10 @@ class JobStore:
                     error=f"{e}\n{traceback.format_exc()[-800:]}",
                 )
 
-        threading.Thread(target=runner, daemon=True).start()
+        if os.environ.get("DLQJ_SYNC_JOBS") == "1":
+            runner()  # serverless hosts end background threads with the request
+        else:
+            threading.Thread(target=runner, daemon=True).start()
 
 
 def start_triage_job(store: JobStore, cfg: Config, *, apply: bool = False) -> str:

@@ -115,6 +115,13 @@ aws cloudformation deploy \
 
 Prefer a small CPU instance when GPU quota is zero. Stop the instance when idle.
 
+## Deploy on Vercel (no EC2)
+
+The UI and API run as one Vercel Function (`api/index.py`). The Decider question is answered on demand by
+Amazon Bedrock (`DLQJ_DECIDER_URL=bedrock`) instead of the local 2B model, runs and jobs are stored in S3
+(`DLQJ_STATE_BUCKET`), and AWS access uses Vercel OIDC (`AWS_ROLE_ARN`, created by the stack when
+`VercelTeamSlug` is set). Set the `DLQJ_*` variables from the stack outputs, then `vercel deploy --prod`.
+
 ## Demo
 
 - Video: `VIDEO_URL`

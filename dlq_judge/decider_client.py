@@ -84,7 +84,33 @@ def _parse_response(data: dict[str, Any], latency_ms: int) -> DeciderResult:
     )
 
 
+def _ask_bedrock(state: State, cfg: Config) -> DeciderResult:
+    """Same question and criteria as the Strands Decider, answered on demand by Bedrock (no local model)."""
+    from dlq_judge.bedrock_client import _converse, _extract_json
+
+    criteria = "\n".join(f"- {k}: {CRITERIA[k]}" for k in OPTIONS)
+    system = (
+        "You classify failed Amazon SQS messages. Reply with ONLY a JSON object "
+        '{"probabilities":{"<option>":<0..1>,...}} giving a probability for every option; they sum to 1. '
+        "No markdown, no other keys."
+    )
+    user = f"Question: {QUESTION}\nOptions:\n{criteria}\nState:\n{render_state(state)}"
+    model = cfg.decider_model if cfg.decider_model.startswith(("amazon.", "us.", "anthropic.")) else cfg.bedrock_model_id
+    text, latency_ms = _converse(cfg, system, user, model_id=model)
+    data = _extract_json(text)
+    if not data:
+        raise ValueError("no JSON in Bedrock decider response")
+    probs = data.get("probabilities") if isinstance(data.get("probabilities"), dict) else data
+    probs = {k: max(0.0, float(v)) for k, v in probs.items() if k in OPTIONS and isinstance(v, (int, float))}
+    total = sum(probs.values())
+    if total <= 0:
+        raise ValueError("no probabilities in Bedrock decider response")
+    return _parse_response({"probabilities": {k: v / total for k, v in probs.items()}}, latency_ms)
+
+
 def ask(state: State, cfg: Config) -> DeciderResult:
+    if cfg.decider_url.startswith("bedrock"):
+        return _ask_bedrock(state, cfg)
     payload = build_request(state)
     url = cfg.decider_url.rstrip("/") + "/v1/systemone"
     body = json.dumps(payload).encode("utf-8")
